@@ -1,0 +1,240 @@
+
+{% extends "base.html" %}
+
+{% block content %}
+
+<div class="relative flex size-full min-h-screen flex-col bg-[#101a23] dark group/design-root overflow-x-hidden" style='font-family: Inter, "Noto Sans", sans-serif;'>
+    <div class="layout-container flex h-full grow flex-col">
+        <div class="px-0 flex flex-1 py-5 gap-4">
+            <!-- עמודה שמאלית עם שירים ומילים -->
+            <aside class="flex flex-row gap-2 p-4 rounded-xl shrink-0 border border-[#314f68]" style="width: 35%; max-height: calc(100vh - 50px); overflow-y: hidden;">
+                <!-- רשימת השירים -->
+                <div class="flex-[1] overflow-hidden rounded-xl p-4 flex flex-col" style="max-height: 100%; overflow-y: auto;">
+                    <h2 class="text-white text-[22px] font-bold leading-tight tracking-[-0.015em] mb-2">Songs</h2>
+                    <input
+                        id="filter-songs"
+                        class="form-input w-full rounded-xl text-white border border-[#314f68] bg-[#182834] h-12 placeholder:text-[#90b0cb] px-4 text-sm mb-4"
+                        value=""
+                        placeholder="Type to filter songs..."
+                    />
+                    <div id="song-list-container" class="flex-1 flex flex-col gap-2 overflow-y-auto" style="max-height: calc(100vh - 200px);">
+                        {% for id, song_name in songs %}
+                        <div class="flex items-center gap-4">
+                            <input
+                                type="checkbox"
+                                class="h-5 w-5 rounded border-[#314f68] border-2 bg-transparent text-[#2094f3] checked:bg-[#2094f3] checked:border-[#2094f3]"
+                                data-id="{{ id }}"
+                                data-name="{{ song_name }}"
+                            />
+                            <span class="text-white text-sm font-medium">{{ song_name }}</span>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            
+                <!-- רשימת המילים -->
+                <div class="flex-[1] overflow-hidden rounded-xl p-4 flex flex-col" style="max-height: 100%; overflow-y: auto;">
+                    <h2 class="text-white text-[22px] font-bold leading-tight tracking-[-0.015em] mb-2">Words</h2>
+                    <div class="flex items-center gap-2 mb-4">
+                        <input
+                            id="filter-words"
+                            class="form-input w-full rounded-xl text-white border border-[#314f68] bg-[#182834] h-12 placeholder:text-[#90b0cb] px-4 text-sm"
+                            value=""
+                            placeholder="Type to filter words..."
+                        />
+                        <button
+                            id="check-button"
+                            class="bg-[#2094f3] text-white rounded-xl px-4 py-2 text-sm font-bold leading-normal hover:bg-[#1a7ec8] transition-colors duration-200"
+                        >
+                            Check
+                        </button>
+                    </div>
+                    <div id="word-list-container" class="flex-1 flex flex-col gap-2 overflow-y-auto" style="max-height: calc(100vh - 200px);">
+                        {% for id, word_str in words %}
+                        <div class="flex items-center gap-4">
+                            <input
+                                type="radio"
+                                name="song-selection"
+                                id="radio-all"
+                                class="h-5 w-5 border-2 border-[#314f68] bg-transparent text-transparent checked:border-[#2094f3]"
+                                data-id="{{ id }}"
+                                data-name="{{ word_str }}"
+                                {% if loop.index == 1 %} checked {% endif %}
+                            />
+                            <span class="text-white text-sm font-medium">{{ word_str }}</span>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </aside>
+            
+            
+            
+            
+
+            <!-- טבלה במרכז -->
+            <div class="overflow-auto flex-1 p-4 ml-4 rounded-xl bg-[#101a23]" style="max-height: calc(100vh - 200px); width: 65%;">
+                <table class="w-full border-collapse">
+                    <thead>
+                        <tr class="bg-[#182834]">
+                            <th class="px-4 py-4 text-left text-white w-[200px] text-sm font-medium leading-normal sticky top-0 bg-[#182834] z-10">Word</th>
+                            <th class="px-4 py-4 text-left text-white w-[200px] text-sm font-medium leading-normal sticky top-0 bg-[#182834] z-10">Song</th>
+                            <th class="px-4 py-4 text-left text-white w-[200px] text-sm font-medium leading-normal sticky top-0 bg-[#182834] z-10">Paragraph number</th>
+                            <th class="px-4 py-4 text-left text-white w-[200px] text-sm font-medium leading-normal sticky top-0 bg-[#182834] z-10">Line in Paragraph</th>
+                        </tr>
+                    </thead>
+                    <tbody id="rhymes-table-body">
+                        <!-- תוכן דינמי -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+
+<script>
+document.addEventListener("DOMContentLoaded", () => {
+    const wordListContainer = document.getElementById("word-list-container");
+    const rhymesTableBody = document.getElementById("rhymes-table-body");
+    const songListContainer = document.getElementById("song-list-container");
+    const filterSongs = document.getElementById("filter-songs");
+    const filterWords = document.getElementById("filter-words");
+    const checkButton = document.getElementById("check-button");
+
+    filterSongs.addEventListener("input", (event) => {
+    const filterText = event.target.value.toLowerCase(); // טקסט החיפוש באותיות קטנות
+    const songItems = document.querySelectorAll("#song-list-container > div"); // כל השירים ברשימה
+
+    songItems.forEach(item => {
+        const songText = item.querySelector("span").textContent.toLowerCase(); // טקסט השיר
+        if (songText.includes(filterText)) {
+            item.style.display = ""; // הצג את השיר אם יש התאמה
+        } else {
+            item.style.display = "none"; // הסתר את השיר אם אין התאמה
+        }
+    });
+});
+
+filterWords.addEventListener("input", (event) => {
+    const filterText = event.target.value.toLowerCase(); // טקסט החיפוש באותיות קטנות
+    const wordItems = document.querySelectorAll("#word-list-container > div"); // כל המילים ברשימה
+
+    wordItems.forEach(item => {
+        const wordText = item.querySelector("span").textContent.toLowerCase(); // טקסט המילה
+        if (wordText.includes(filterText)) {
+            item.style.display = ""; // הצג את המילה אם יש התאמה
+        } else {
+            item.style.display = "none"; // הסתר את המילה אם אין התאמה
+        }
+    });
+});
+
+    let selectedSongs = []; // שמירת השירים שנבחרו
+
+    // בחר את ה-radio הראשון ברשימה
+    const firstRadio = wordListContainer.querySelector("input[type='radio']");
+    if (firstRadio) {
+        firstRadio.checked = true;
+        const defaultWord = firstRadio.dataset.name;
+        console.log("Default word:", defaultWord);
+
+        // שליפת הנתונים למילה שנבחרה כברירת מחדל
+        fetchRhymesAndPopulateTable(defaultWord);
+    }
+
+    // מאזין לאירוע שינוי ברשימת המילים
+    wordListContainer.addEventListener("change", (event) => {
+        if (event.target.type === "radio") {
+            const selectedWord = event.target.dataset.name;
+            console.log("Selected word:", selectedWord);
+
+            // שליפת הנתונים למילה שנבחרה
+            fetchRhymesAndPopulateTable(selectedWord);
+        }
+    });
+
+    // מאזין לשינויים בבחירת השירים
+    songListContainer.addEventListener("change", () => {
+        selectedSongs = Array.from(
+            songListContainer.querySelectorAll("input[type='checkbox']:checked")
+        ).map(checkbox => checkbox.dataset.name);
+
+        console.log("Selected songs:", selectedSongs);
+
+        // סינון הטבלה לפי השירים שנבחרו
+        filterTableBySongs(selectedSongs);
+    });
+
+    checkButton.addEventListener("click", () => {
+        const inputText = filterWords.value.trim(); // קבלת הערך מתוך השדה
+        if (inputText) {
+            fetchRhymesAndPopulateTable(inputText);
+        } else {
+            alert("Please enter a word to check");
+        }
+    });
+
+    // פונקציה לשליפת נתוני החרוזים ולמילוי הטבלה
+    async function fetchRhymesAndPopulateTable(word) {
+        try {
+            const response = await fetch(`/get-rhymes?word=${encodeURIComponent(word)}`);
+            if (!response.ok) {
+                throw new Error("Failed to fetch rhymes from backend.");
+            }
+
+            const data = await response.json();
+            if (data.status === "success") {
+                populateRhymesTable(data.words);
+            } else {
+                console.error("Error fetching rhymes:", data.message);
+                alert("Failed to fetch rhymes. Please try again.");
+            }
+        } catch (error) {
+            console.error("Error:", error);
+        }
+    }
+
+    // פונקציה למילוי הטבלה
+    function populateRhymesTable(rhymes) {
+        rhymesTableBody.innerHTML = ""; // נקה את הטבלה הקיימת
+
+        rhymes.forEach(rhyme => {
+            const tr = document.createElement("tr");
+            tr.dataset.song = rhyme[1]; // שמירת שם השיר בנתון של השורה
+            tr.innerHTML = `
+                <td class="px-4 py-2 text-sm text-white">${rhyme[0]}</td>
+                <td class="px-4 py-2 text-sm text-white">${rhyme[1]}</td>
+                <td class="px-4 py-2 text-sm text-white">${rhyme[2]}</td>
+                <td class="px-4 py-2 text-sm text-white">${rhyme[3]}</td>
+            `;
+            rhymesTableBody.appendChild(tr);
+        });
+
+        // סינון מחדש לפי השירים שנבחרו (אם יש שירים מסוננים)
+        filterTableBySongs(selectedSongs);
+    }
+
+    // פונקציה לסינון הטבלה לפי השירים שנבחרו
+    function filterTableBySongs(selectedSongs) {
+        const rows = rhymesTableBody.querySelectorAll("tr");
+
+        rows.forEach(row => {
+            const songName = row.dataset.song;
+            if (selectedSongs.length === 0 || selectedSongs.includes(songName)) {
+                row.style.display = ""; // הצג את השורה
+            } else {
+                row.style.display = "none"; // הסתר את השורה
+            }
+        });
+    }
+
+});
+
+</script>
+
+
+</script>
+
+{% endblock %}

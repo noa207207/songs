@@ -1,0 +1,298 @@
+
+{% extends "base.html" %}
+
+{% block content %}
+
+<div class="relative flex size-full min-h-screen flex-col bg-[#101a23] dark group/design-root overflow-x-hidden" style='font-family: Inter, "Noto Sans", sans-serif;'>
+    <div class="layout-container flex h-full grow flex-col">
+    <div class="px-0 flex flex-1 justify-center py-5">
+        <aside class="flex flex-col gap-4 p-4 rounded-xl w-[300px] shrink-0">
+            <div class="flex-[1] overflow-hidden border border-[#314f68] rounded-xl p-4 flex flex-col">
+                <h2 class="text-white text-[22px] font-bold leading-tight tracking-[-0.015em] mb-4">Songs</h2>
+                <div id="word-list-container" class="flex-1 flex flex-col gap-3 overflow-y-auto" style="max-height: 300px;">
+                    {% for id, song_name in songs %}
+                    <div class="flex items-center gap-4">
+                        <input
+                            type="checkbox"
+                            class="h-5 w-5 rounded border-[#314f68] border-2 bg-transparent text-[#2094f3] checked:bg-[#2094f3] checked:border-[#2094f3]"
+                            data-id="{{ id }}"
+                            data-name="{{ song_name }}"
+                        />
+                        <span class="text-white text-sm font-medium">{{ song_name }}</span>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>  
+            <div class="flex-[1] overflow-hidden border border-[#314f68] rounded-xl p-4 flex flex-col">
+                <h2 class="text-white text-[22px] font-bold leading-tight tracking-[-0.015em] mb-4">Groups</h2>
+                <div id="group-list-container" class="flex-1 flex flex-col gap-3 overflow-y-auto" style="max-height: 300px;">
+                    {% for id, group_name, group_purpose in groups %}
+                    <div class="flex items-center gap-4">
+                        <input
+                            type="checkbox"
+                            class="h-5 w-5 rounded border-[#314f68] border-2 bg-transparent text-[#2094f3] checked:bg-[#2094f3] checked:border-[#2094f3]"
+                            data-id="{{ id }}"
+                            data-name="{{ group_name }}"
+                        />
+                        <span class="text-white text-sm font-medium">{{ group_name }}</span>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+            
+            <!-- אלמנט 2 -->
+
+        </aside>
+        <div class="layout-content-container flex flex-col max-w-[960px] flex-1">
+        <div class="flex flex-wrap justify-between gap-3 p-4">
+            <div class="flex min-w-72 flex-col gap-3">
+            <p class="text-white tracking-light text-[32px] font-bold leading-tight">Word usage across all songs</p>
+            </div>
+        </div>
+        
+        <div class="px-4 py-3 @container">
+            <div class="flex overflow-hidden rounded-xl border border-[#314f68] bg-[#101a23]">
+                <!-- Wrapper עם גלילה -->
+                <div class="overflow-auto h-[calc(100vh-200px)] w-full">
+                    <table class="w-full border-collapse">
+                        <thead>
+                            <tr class="bg-[#182834]">
+                                <th class="px-4 py-4 text-left text-white w-[400px] text-sm font-medium leading-normal sticky top-0 bg-[#182834] z-10">Word</th>
+                                <th class="px-4 py-4 text-left text-white w-[400px] text-sm font-medium leading-normal sticky top-0 bg-[#182834] z-10">Song</th>
+                                <th class="px-4 py-4 text-left text-white w-[400px] text-sm font-medium leading-normal sticky top-0 bg-[#182834] z-10">Paragraph</th>
+                                <th class="px-4 py-4 text-left text-white w-[400px] text-sm font-medium leading-normal sticky top-0 bg-[#182834] z-10">Line Number</th>
+                                <th class="px-4 py-4 text-left text-white w-[400px] text-sm font-medium leading-normal sticky top-0 bg-[#182834] z-10">
+                                    Word Number In Line
+                                </th>
+                            </tr>
+                            <tr class="bg-[#182834]">
+                                <th class="px-4 py-0 text-left text-white text-sm font-medium leading-normal sticky top-[48px] bg-[#182834] z-10">
+                                    <label class="flex flex-col flex-1">
+                                        <p class="text-white text-sm font-medium pb-1"></p>
+                                        <input
+                                            id="filter-input"
+                                            class="form-input w-full rounded-xl text-white border border-[#314f68] bg-[#182834] h-12 placeholder:text-[#90b0cb] px-4 text-sm"
+                                            value=""
+                                            placeholder="Type to filter..."
+                                        />
+                                    </label>
+                                </th>
+                                <th class="px-4 py-2 text-left text-white text-sm font-medium leading-normal sticky top-[48px] bg-[#182834] z-10"></th>
+                                <th class="px-4 py-2 text-left text-white text-sm font-medium leading-normal sticky top-[48px] bg-[#182834] z-10">
+                                    <label class="flex flex-col">
+                                        <p class="text-white text-xs font-medium leading-normal pb-0"></p>
+                                        <input
+                                            type="number"
+                                            id="filter-paragraph"
+                                            class="form-input w-full rounded-xl text-white border border-[#314f68] bg-[#182834] h-8 placeholder:text-[#90b0cb] px-2 text-xs"
+                                            placeholder="Filter"
+                                            min="1"
+                                        />
+                                    </label>
+                                </th>
+                                <th class="px-4 py-2 text-left text-white text-sm font-medium leading-normal sticky top-[48px] bg-[#182834] z-10">
+                                    <label class="flex flex-col">
+                                        <p class="text-white text-xs font-medium leading-normal pb-0"></p>
+                                        <input
+                                            type="number"
+                                            id="filter-line-number"
+                                            class="form-input w-full rounded-xl text-white border border-[#314f68] bg-[#182834] h-8 placeholder:text-[#90b0cb] px-2 text-xs"
+                                            placeholder="Filter"
+                                            min="1"
+                                        />
+                                    </label>
+                                </th>
+                                <th class="px-4 py-2 text-left text-white text-sm font-medium leading-normal sticky top-[48px] bg-[#182834] z-10">
+                                    <label class="flex flex-col">
+                                        <p class="text-white text-xs font-medium leading-normal pb-0"></p>
+                                        <input
+                                            type="number"
+                                            id="filter-word-number"
+                                            class="form-input w-full rounded-xl text-white border border-[#314f68] bg-[#182834] h-8 placeholder:text-[#90b0cb] px-2 text-xs"
+                                            placeholder="Filter"
+                                            min="1"
+                                        />
+                                    </label>
+                                </th>
+                            </tr>
+                        </thead>
+                        <tbody id="table-body">
+                        </tbody>
+                    </table>
+                    
+                    
+                </div>
+            </div>
+            <style>
+                @container(max-width:120px) {
+                    .table-726e2364-c61e-4485-938a-a66495103736-column-120 {
+                        display: none;
+                    }
+                }
+                @container(max-width:240px) {
+                    .table-726e2364-c61e-4485-938a-a66495103736-column-240 {
+                        display: none;
+                    }
+                }
+                @container(max-width:360px) {
+                    .table-726e2364-c61e-4485-938a-a66495103736-column-360 {
+                        display: none;
+                    }
+                }
+                @container(max-width:480px) {
+                    .table-726e2364-c61e-4485-938a-a66495103736-column-480 {
+                        display: none;
+                    }
+                }
+                @container(max-width:600px) {
+                    .table-726e2364-c61e-4485-938a-a66495103736-column-600 {
+                        display: none;
+                    }
+                }
+            </style>
+        </div>        
+        </div>
+    </div>
+    </div>
+</div>
+
+<script id="index-data" type="application/json">
+    {{ index_data | tojson }}
+</script>
+
+<script id="words-in-group-data" type="application/json">
+    {{ words_in_group | tojson }}
+</script>
+
+
+<script>
+
+document.addEventListener("DOMContentLoaded", () => {
+    const data = JSON.parse(document.getElementById("index-data").textContent);
+    const wordsInGroup = JSON.parse(document.getElementById("words-in-group-data").textContent); // Load words_in_group data
+    const tableBody = document.getElementById("table-body");
+
+    const filterInput = document.getElementById("filter-input");
+    const filterParagraphInput = document.getElementById("filter-paragraph");
+    const filterLineNumberInput = document.getElementById("filter-line-number");
+    const filterWordNumberInput = document.getElementById("filter-word-number");
+    const songCheckboxes = document.querySelectorAll("#word-list-container input[type='checkbox']");
+    const groupCheckboxes = document.querySelectorAll("#group-list-container input[type='checkbox']");
+
+    // פונקציה לרינדור הטבלה
+    function renderTable(filteredData) {
+        tableBody.innerHTML = ""; // נקה את הטבלה
+        filteredData.forEach(row => {
+            const tr = document.createElement("tr");
+            tr.innerHTML = `
+                <td class="px-4 py-2 text-sm text-white">${row[1]}</td>
+                <td class="px-4 py-2 text-sm text-white">${row[2]}</td>
+                <td class="px-4 py-2 text-sm text-white">${row[3]}</td>
+                <td class="px-4 py-2 text-sm text-white">${row[4]}</td>
+                <td class="px-4 py-2 text-sm text-white">${row[5]}</td>
+            `;
+            tableBody.appendChild(tr);
+        });
+    }
+
+    // פונקציה לקבלת השירים הנבחרים
+    function getSelectedSongs() {
+        return Array.from(songCheckboxes)
+            .filter(checkbox => checkbox.checked)
+            .map(checkbox => checkbox.dataset.name.toLowerCase());
+    }
+
+    // פונקציה לקבלת הקבוצות הנבחרות
+    function getSelectedGroups() {
+        return Array.from(groupCheckboxes)
+            .filter(checkbox => checkbox.checked)
+            .map(checkbox => checkbox.dataset.id); // משתמשים ב-ID של הקבוצה
+    }
+
+    // עדכון הטבלה על פי הפילטרים
+    function filterData() {
+        const filterValue = filterInput.value.toLowerCase();
+        const paragraphFilter = filterParagraphInput.value;
+        const lineNumberFilter = filterLineNumberInput.value;
+        const wordNumberFilter = filterWordNumberInput.value;
+        const selectedSongs = getSelectedSongs();
+        const selectedGroups = getSelectedGroups();
+
+        const filteredData = data.filter(row => {
+            const matchesParagraph = paragraphFilter === "" || row[3] == paragraphFilter;
+            const matchesLineNumber = lineNumberFilter === "" || row[4] == lineNumberFilter;
+            const matchesWordNumber = wordNumberFilter === "" || row[5] == wordNumberFilter;
+            const matchesSongs = selectedSongs.length === 0 || selectedSongs.includes(row[2].toLowerCase());
+            const matchesFilterValue =
+                row[1].toLowerCase().includes(filterValue);
+
+            const matchesGroup =
+                selectedGroups.length === 0 ||
+                selectedGroups.some(groupId =>
+                    wordsInGroup.some(wordGroup => wordGroup[2] == groupId && wordGroup[1] == row[0])
+                );
+
+            return matchesParagraph && matchesLineNumber && matchesWordNumber && matchesSongs && matchesFilterValue && matchesGroup;
+        });
+
+        renderTable(filteredData);
+    }
+
+    // אירועים על הפילטרים
+    filterParagraphInput.addEventListener("input", filterData);
+    filterLineNumberInput.addEventListener("input", filterData);
+    filterWordNumberInput.addEventListener("input", filterData);
+    filterInput.addEventListener("input", filterData);
+    songCheckboxes.forEach(checkbox => checkbox.addEventListener("change", filterData));
+    groupCheckboxes.forEach(checkbox => checkbox.addEventListener("change", filterData));
+
+    // רינדור התחלתי של כל הנתונים
+    renderTable(data);
+});
+
+
+
+</script>
+
+<script>
+    document.addEventListener("DOMContentLoaded", () => {
+        const dropdownButton = document.getElementById("dropdownButton");
+        const dropdownMenu = document.getElementById("dropdownMenu");
+
+        // הצגת התפריט בלחיצה על הכפתור
+        dropdownButton.addEventListener("click", (e) => {
+            e.stopPropagation(); // למנוע סגירת הדרופדאון בלחיצה חיצונית
+            dropdownMenu.classList.toggle("hidden"); // פתיחה/סגירה
+        });
+
+        // סגירת התפריט בלחיצה מחוץ לו
+        document.addEventListener("click", () => {
+            dropdownMenu.classList.add("hidden");
+        });
+
+        // שמירה על תפריט פתוח בלחיצה בתוכו
+        dropdownMenu.addEventListener("click", (e) => {
+            e.stopPropagation(); // למנוע סגירה בלחיצה על התפריט
+        });
+
+        // הוספת לוגיקה לאפשרויות
+        const checkboxes = dropdownMenu.querySelectorAll("input[type='checkbox']");
+        checkboxes.forEach((checkbox) => {
+            checkbox.addEventListener("change", () => {
+                console.log(`Checkbox ${checkbox.dataset.id} is now ${checkbox.checked ? "checked" : "unchecked"}`);
+            });
+        });
+    });
+
+    var checkList = document.getElementById('list1');
+checkList.getElementsByClassName('anchor')[0].onclick = function(evt) {
+  if (checkList.classList.contains('visible'))
+    checkList.classList.remove('visible');
+  else
+    checkList.classList.add('visible');
+}
+</script>
+
+
+
+{% endblock %}

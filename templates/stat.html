@@ -1,0 +1,509 @@
+
+{% extends "base.html" %}
+
+{% block content %}
+<style>
+    .tab {
+        border-bottom: 3px solid transparent;
+        color: #90b0cb;
+        flex-grow: 1; /* גורם לכל טאב לקחת חלק שווה מהאזור הפנוי */
+        text-align: center; /* ממרכז את התוכן בטאב */
+        padding: 16px;
+    }
+
+    #tabs-container {
+        justify-content: space-between; /* יישור הטאבים ברווח שווה */
+    }
+
+    .tab-active {
+        border-bottom-color: #2094f3;
+        color: white;
+    }
+
+    .tab-content-container {
+        max-width: 100%; /* מאפשר לתוכן לקחת את כל רוחב המסך */
+        margin: 0 auto; /* ממרכז את התוכן */
+        padding: 0 20px; /* שומר רווח מינימלי בצדדים */
+    }
+
+    .layout-content-container {
+        flex: 1;
+        width: 100%; /* מאפשר לתפוס את כל הרוחב */
+    }
+
+    td {
+        white-space: nowrap; /* שמור על תוכן שורה אחד */
+        overflow: hidden;    /* הסתר גלישה */
+        text-overflow: ellipsis; /* הוסף "..." במידת הצורך */
+    }
+
+    .overflow-auto {
+        overflow: auto;
+        width: 100%;
+        max-height: calc(100vh - 200px); /* שומר על גובה דינמי */
+    }
+</style>
+
+
+<div class=" px-0 relative flex size-full min-h-screen flex-col bg-[#101a23] dark group/design-root overflow-x-hidden" style='font-family: Inter, "Noto Sans", sans-serif;'>
+    <div class="px-0 layout-container flex h-full grow flex-col">
+        <div class="px-0 flex flex-1 justify-center py-5">
+            <div class="layout-content-container flex flex-col w-full flex-1">
+                <div class="pb-3">
+                    <div class="flex border-b border-[#314f68] px-4 gap-8" id="tabs-container">
+                        <a id="tab-words" class="tab flex flex-col items-center justify-center border-b-[3px] border-b-[#2094f3] text-white pb-[13px] pt-4" href="#">
+                            <p class="text-white text-sm font-bold leading-normal tracking-[0.015em]">Words</p>
+                        </a>
+                        <a id="tab-lines" class="tab flex flex-col items-center justify-center border-b-[3px] border-b-transparent text-[#90b0cb] pb-[13px] pt-4" href="#">
+                            <p class="text-[#90b0cb] text-sm font-bold leading-normal tracking-[0.015em]">Lines</p>
+                        </a>
+                        <a id="tab-phrases" class="tab flex flex-col items-center justify-center border-b-[3px] border-b-transparent text-[#90b0cb] pb-[13px] pt-4" href="#">
+                            <p class="text-[#90b0cb] text-sm font-bold leading-normal tracking-[0.015em]">Phrases</p>
+                        </a>
+                        <a id="tab-songs" class="tab flex flex-col items-center justify-center border-b-[3px] border-b-transparent text-[#90b0cb] pb-[13px] pt-4" href="#">
+                            <p class="text-[#90b0cb] text-sm font-bold leading-normal tracking-[0.015em]">Songs</p>
+                        </a>
+                    </div>
+                </div>
+                <div class="tab-content-container p-4">
+                    <div id="content-words" class="tab-content flex gap-4">
+                        <!-- מסגרת השירים -->
+                        <aside class="flex flex-col gap-4 p-4 rounded-xl w-[200px] shrink-0">
+                            <input
+                                            id="filter-input"
+                                            class="form-input w-full rounded-xl text-white border border-[#314f68] bg-[#182834] h-12 placeholder:text-[#90b0cb] px-4 text-sm"
+                                            value=""
+                                            placeholder="Type to filter words..."
+                                        />
+                            <h2 class="text-white text-[22px] font-bold leading-tight tracking-[-0.015em] mb-4">Songs</h2>
+                            <div id="word-list-container" class="flex-1 flex flex-col gap-3 overflow-y-auto" style="max-height: calc(100vh - 300px);">
+                                <!-- בחירה דיפולטיבית: ALL -->
+                                <div class="flex items-center gap-4">
+                                    <input
+                                        type="radio"
+                                        name="song-selection"
+                                        id="radio-all"
+                                        class="h-5 w-5 border-2 border-[#314f68] bg-transparent text-transparent checked:border-[#2094f3]"
+                                        data-id="-1"
+                                        checked
+                                    />
+                                    <span class="text-white text-sm font-medium">All</span>
+                                </div>
+                            
+                                <!-- שאר השירים -->
+                                {% for id, song_name in songs %}
+                                <div class="flex items-center gap-4">
+                                    <input
+                                        type="radio"
+                                        name="song-selection"
+                                        class="h-5 w-5 border-2 border-[#314f68] bg-transparent text-transparent checked:border-[#2094f3]"
+                                        data-id="{{ id }}"
+                                        data-name="{{ song_name }}"
+                                    />
+                                    <span class="text-white text-sm font-medium">{{ song_name }}</span>
+                                </div>
+                                {% endfor %}
+                            </div>
+                        </aside>
+                        
+                        <!-- טבלה -->
+                        <div class="overflow-auto w-full" style="max-height: calc(100vh - 200px);">
+                            
+                            <table class="w-full border-collapse">
+                                <thead>
+                                    <tr class="bg-[#182834]">
+                                        <th class="px-4 py-4 text-left text-white w-[400px] text-sm font-medium leading-normal sticky top-0 bg-[#182834] z-10">Word</th>
+                                        <th class="px-4 py-4 text-left text-white w-[400px] text-sm font-medium leading-normal sticky top-0 bg-[#182834] z-10">Total Word Shows</th>
+                                        <th class="px-4 py-4 text-left text-white w-[400px] text-sm font-medium leading-normal sticky top-0 bg-[#182834] z-10">Total Words</th>
+                                        <th class="px-4 py-4 text-left text-white w-[400px] text-sm font-medium leading-normal sticky top-0 bg-[#182834] z-10">Frequency</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="words-table-body">
+                                    <!-- תוכן דינמי -->
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                     <!-- שורות -->
+                    <div id="content-lines" class="tab-content flex gap-4">
+                        <aside class="flex flex-col gap-4 p-4 rounded-xl w-[200px] shrink-0">
+                            <h2 class="text-white text-[22px] font-bold leading-tight tracking-[-0.015em] mb-4">Songs</h2>
+                            <div id="word-line-list-container" class="flex-1 flex flex-col gap-3 overflow-y-auto" style="max-height: calc(100vh - 300px);">
+                                {% for id, song_name in songs %}
+                                <div class="flex items-center gap-4">
+                                    <input
+                                        type="radio"
+                                        name="song-line-selection"
+                                        class="h-5 w-5 border-2 border-[#314f68] bg-transparent text-transparent checked:border-[#2094f3]"
+                                        data-id="{{ id }}"
+                                        data-name="{{ song_name }}"
+                                        {% if loop.index == 1 %} checked {% endif %}
+                                    />
+                                    <span class="text-white text-sm font-medium">{{ song_name }}</span>
+                                </div>
+                                {% endfor %}
+                            </div>
+                            
+                        </aside>
+                        <!-- טבלה -->
+                        <div class="overflow-auto w-full" style="max-height: calc(100vh - 200px);">
+                            <table class="w-full border-collapse">
+                                <thead>
+                                    <tr class="bg-[#182834]">
+                                        <th class="px-4 py-4 text-left text-white w-[400px] text-sm font-medium leading-normal sticky top-0 bg-[#182834] z-10">Line number in paragraph</th>
+                                        <th class="px-4 py-4 text-left text-white w-[400px] text-sm font-medium leading-normal sticky top-0 bg-[#182834] z-10">Pagraph number</th>
+                                        <th class="px-4 py-4 text-left text-white w-[400px] text-sm font-medium leading-normal sticky top-0 bg-[#182834] z-10">Total Line chars</th>
+                                        <th class="px-4 py-4 text-left text-white w-[400px] text-sm font-medium leading-normal sticky top-0 bg-[#182834] z-10">Total words</th>
+                                        <th class="px-4 py-4 text-left text-white w-[400px] text-sm font-medium leading-normal sticky top-0 bg-[#182834] z-10">Total words in song</th>
+                                        <th class="px-4 py-4 text-left text-white w-[400px] text-sm font-medium leading-normal sticky top-0 bg-[#182834] z-10">Frequency</th>
+                                        <th class="px-4 py-4 text-left text-white w-[400px] text-sm font-medium leading-normal sticky top-0 bg-[#182834] z-10">Average line proportion</th>
+                                        <th class="px-4 py-4 text-left text-white w-[400px] text-sm font-medium leading-normal sticky top-0 bg-[#182834] z-10">Line Relative Density</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="line-table-body">
+                                    <!-- תוכן דינמי -->
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                    <div id="content-phrases" class="tab-content flex gap-4">
+                        <aside class="flex flex-col gap-4 p-4 rounded-xl w-[200px] shrink-0">
+                            <h2 class="text-white text-[22px] font-bold leading-tight tracking-[-0.015em] mb-4">Songs</h2>
+                            <div id="word-pars-list-container" class="flex-1 flex flex-col gap-3 overflow-y-auto" style="max-height: calc(100vh - 300px);">
+                                {% for id, song_name in songs %}
+                                <div class="flex items-center gap-4">
+                                    <input
+                                        type="radio"
+                                        name="song-pars-selection"
+                                        class="h-5 w-5 border-2 border-[#314f68] bg-transparent text-transparent checked:border-[#2094f3]"
+                                        data-id="{{ id }}"
+                                        data-name="{{ song_name }}"
+                                        {% if loop.index == 1 %} checked {% endif %}
+                                    />
+                                    <span class="text-white text-sm font-medium">{{ song_name }}</span>
+                                </div>
+                                {% endfor %}
+                            </div>
+                            
+                        </aside>
+                        <!-- טבלה -->
+                        <div class="overflow-auto w-full" style="max-height: calc(100vh - 200px);">
+                            <table class="w-full border-collapse">
+                                <thead>
+                                    <tr class="bg-[#182834]">
+                                        <th class="px-4 py-4 text-left text-white w-[400px] text-sm font-medium leading-normal sticky top-0 bg-[#182834] z-10">Pagraph number</th>
+                                        <th class="px-4 py-4 text-left text-white w-[400px] text-sm font-medium leading-normal sticky top-0 bg-[#182834] z-10">Total paragraph lines</th>
+                                        <th class="px-4 py-4 text-left text-white w-[400px] text-sm font-medium leading-normal sticky top-0 bg-[#182834] z-10">Total paragraph words</th>
+                                        <th class="px-4 py-4 text-left text-white w-[400px] text-sm font-medium leading-normal sticky top-0 bg-[#182834] z-10">Total paragraph char</th>
+                                        <th class="px-4 py-4 text-left text-white w-[400px] text-sm font-medium leading-normal sticky top-0 bg-[#182834] z-10">Paragraph average chars per word</th>
+                                        <th class="px-4 py-4 text-left text-white w-[400px] text-sm font-medium leading-normal sticky top-0 bg-[#182834] z-10">Total Paragraphs in Songs</th>
+                                        <th class="px-4 py-4 text-left text-white w-[400px] text-sm font-medium leading-normal sticky top-0 bg-[#182834] z-10">Total Words in Songs</th>
+                                        <th class="px-4 py-4 text-left text-white w-[400px] text-sm font-medium leading-normal sticky top-0 bg-[#182834] z-10">Paragraph's words rate in Song</th>
+                                        <th class="px-4 py-4 text-left text-white w-[400px] text-sm font-medium leading-normal sticky top-0 bg-[#182834] z-10">Avareage paragraph's words rate</th>
+                                        <th class="px-4 py-4 text-left text-white w-[400px] text-sm font-medium leading-normal sticky top-0 bg-[#182834] z-10">Relative Density</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="par-table-body">
+                                    <!-- תוכן דינמי -->
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                    <div id="content-songs" class="tab-content flex gap-4">
+                        <aside class="flex flex-col gap-4 p-4 rounded-xl w-[200px] shrink-0">
+                            <input
+                            id="filter-songs-input"
+                            class="form-input w-full rounded-xl text-white border border-[#314f68] bg-[#182834] h-12 placeholder:text-[#90b0cb] px-4 text-sm"
+                            value=""
+                            placeholder="Type to filter songs..."
+                        />
+                        </aside>
+                        <div class="overflow-auto w-full" style="max-height: calc(100vh - 200px);">
+                            <table class="w-full border-collapse">
+                                <thead>
+                                    <tr class="bg-[#182834]">
+                                        <th class="px-4 py-4 text-left text-white w-[400px] text-sm font-medium leading-normal sticky top-0 bg-[#182834] z-10">Song</th>
+                                        <th class="px-4 py-4 text-left text-white w-[400px] text-sm font-medium leading-normal sticky top-0 bg-[#182834] z-10">Total Pagraph</th>
+                                        <th class="px-4 py-4 text-left text-white w-[400px] text-sm font-medium leading-normal sticky top-0 bg-[#182834] z-10">Total lines</th>
+                                        <th class="px-4 py-4 text-left text-white w-[400px] text-sm font-medium leading-normal sticky top-0 bg-[#182834] z-10">Total words</th>
+                                        <th class="px-4 py-4 text-left text-white w-[400px] text-sm font-medium leading-normal sticky top-0 bg-[#182834] z-10">Total chars</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="song-table-body">
+                                    <!-- תוכן דינמי -->
+                                </tbody>
+                            </table>
+                        </div>
+                        <style>
+                            td {
+                                white-space: nowrap; /* שמור על תוכן שורה אחד */
+                                overflow: hidden;    /* הסתר גלישה */
+                                text-overflow: ellipsis; /* הוסף "..." במידת הצורך */
+                            }
+                        </style>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script id="words-in-songs-data" type="application/json">
+    {{ words_stat_in_songs | tojson }}
+</script>
+
+<script id="words-data" type="application/json">
+    {{ words_stat | tojson }}
+</script>
+
+<script id="line-data" type="application/json">
+    {{ line_stat | tojson }}
+</script>
+
+<script id="pars-data" type="application/json">
+    {{ pars_stat | tojson }}
+</script>
+
+<script id="songs-data" type="application/json">
+    {{ songs_stat | tojson }}
+</script>
+
+<script>
+    const wordsTableBody = document.getElementById("words-table-body");
+    const lineTableBody = document.getElementById("line-table-body");
+    const ParTableBody = document.getElementById("par-table-body");
+    const SongTableBody = document.getElementById("song-table-body");
+    const woeds_data = JSON.parse(document.getElementById("words-data").textContent);
+    const songs_data = JSON.parse(document.getElementById("songs-data").textContent);
+    const woeds_in_songs_data = JSON.parse(document.getElementById("words-in-songs-data").textContent);
+    const line_data = JSON.parse(document.getElementById("line-data").textContent);
+    const par_data = JSON.parse(document.getElementById("pars-data").textContent);
+    const wordListContainer = document.getElementById("word-list-container");
+    const wordLineListContainer = document.getElementById("word-line-list-container");
+    const wordParListContainer = document.getElementById("word-pars-list-container");
+    const filterInput = document.getElementById("filter-input");
+    const filterSongsInput = document.getElementById("filter-songs-input");
+    const selectedSongRadio = document.querySelector("input[name='song-line-selection']:checked");
+    // alert(selectedSongRadio)
+
+    filterInput.addEventListener("input", (event) => {
+        const filterText = event.target.value.toLowerCase(); // טקסט החיפוש באותיות קטנות
+        const tableRows = wordsTableBody.querySelectorAll("tr"); // כל השורות בטבלה
+
+        tableRows.forEach(row => {
+            const firstColumnText = row.querySelector("td:first-child").textContent.toLowerCase(); // טקסט העמודה הראשונה
+            if (firstColumnText.includes(filterText)) {
+                row.style.display = ""; // הצג את השורה אם יש התאמה
+            } else {
+                row.style.display = "none"; // הסתר את השורה אם אין התאמה
+            }
+        });
+    });
+
+    filterSongsInput.addEventListener("input", (event) => {
+        const filterText = event.target.value.toLowerCase(); // טקסט החיפוש באותיות קטנות
+        const tableRows = SongTableBody.querySelectorAll("tr"); // כל השורות בטבלה
+
+        tableRows.forEach(row => {
+            const firstColumnText = row.querySelector("td:first-child").textContent.toLowerCase(); // טקסט העמודה הראשונה
+            if (firstColumnText.includes(filterText)) {
+                row.style.display = ""; // הצג את השורה אם יש התאמה
+            } else {
+                row.style.display = "none"; // הסתר את השורה אם אין התאמה
+            }
+        });
+    });
+
+    document.addEventListener("DOMContentLoaded", () => {
+        const tabs = document.querySelectorAll(".tab");
+        const tabContents = document.querySelectorAll(".tab-content");
+
+        wordListContainer.addEventListener("change", (event) => {
+        const selectedRadio = event.target;
+
+        // בדוק אם ה-element הוא רדיו
+        if (selectedRadio.name === "song-selection") {
+            const selectedId = selectedRadio.dataset.id;
+            const selectedName = selectedRadio.dataset.name;
+
+            if (selectedId === "-1") {
+                // הפונקציה עבור ALL
+                renderWordsTable();
+            } else {
+                // הפונקציה עבור ID מסוים
+                generateTableForSong(selectedName);
+            }
+        }
+    });
+    wordLineListContainer.addEventListener("change", (event) => {
+        const selectedRadio = event.target;
+
+        // בדוק אם ה-element הוא רדיו
+        if (selectedRadio.name === "song-line-selection") {
+            const selectedId = selectedRadio.dataset.id;
+            const selectedName = selectedRadio.dataset.name;
+
+                // הפונקציה עבור ID מסוים
+            renderLineTable(selectedName);
+        }
+    });
+
+    wordParListContainer.addEventListener("change", (event) => {
+        const selectedRadio = event.target;
+
+        // בדוק אם ה-element הוא רדיו
+        if (selectedRadio.name === "song-pars-selection") {
+            const selectedId = selectedRadio.dataset.id;
+            const selectedName = selectedRadio.dataset.name;
+
+                // הפונקציה עבור ID מסוים
+            renderParsTable(selectedName);
+        }
+    });
+        // פונקציה לעדכון מצב הטאבים
+        function updateActiveTab(clickedTab) {
+        tabs.forEach(tab => tab.classList.remove("tab-active"));
+        tabContents.forEach(content => content.classList.add("hidden"));
+
+        clickedTab.classList.add("tab-active");
+        const targetContentId = clickedTab.id.replace("tab-", "content-");
+        document.getElementById(targetContentId).classList.remove("hidden");
+
+        // קביעת הטאב הפעיל
+        activeTab = targetContentId.split("-")[1];
+
+        // מילוי הטבלה הרלוונטית
+        if (activeTab === "words") {
+            renderWordsTable();
+        } else if (activeTab === "lines") {
+            const selectedSongRadio = document.querySelector("input[name='song-line-selection']:checked");
+            if (selectedSongRadio) {
+                // alert(selectedSongRadio.dataset.name)
+                const selectedSongName = selectedSongRadio.dataset.name;
+                renderLineTable(selectedSongName);
+            }
+        } else if (activeTab === "phrases") {
+            const selectedSongRadio = document.querySelector("input[name='song-pars-selection']:checked");
+            if (selectedSongRadio) {
+                // alert(selectedSongRadio.dataset.name)
+                const selectedSongName = selectedSongRadio.dataset.name;
+                renderParsTable(selectedSongName);
+            }
+        } else if (activeTab === "songs") {
+            renderSongsTable();
+        }
+
+        
+    }
+
+        // הוספת מאזינים לכל הטאבים
+        tabs.forEach(tab => {
+            tab.addEventListener("click", (e) => {
+                e.preventDefault();
+                updateActiveTab(tab);
+            });
+        });
+
+        // קביעת טאב ברירת מחדל (הטאב הראשון)
+        updateActiveTab(tabs[0]);
+    });
+
+    function renderWordsTable() {
+        wordsTableBody.innerHTML = ""; // נקה את הטבלה
+        woeds_data.forEach(row => {
+            const tr = document.createElement("tr");
+            tr.innerHTML = `
+                <td class="px-4 py-2 text-sm text-white">${row[0]}</td>
+                <td class="px-4 py-2 text-sm text-white">${row[1]}</td>
+                <td class="px-4 py-2 text-sm text-white bg-[#182834]">${row[2]}</td>
+                <td class="px-4 py-2 text-sm text-white">${row[3]}</td>
+            `;
+            wordsTableBody.appendChild(tr);
+        });
+    }
+
+    function generateTableForSong(selectedSongName) {
+    wordsTableBody.innerHTML = ""; // נקה את הטבלה
+
+    woeds_in_songs_data.forEach(row => {
+        // בדיקה אם row[0] תואם לשם השיר שנבחר
+        if (row[0] === selectedSongName) {
+            const tr = document.createElement("tr");
+            tr.innerHTML = `
+                <td class="px-4 py-2 text-sm text-white">${row[1]}</td>
+                <td class="px-4 py-2 text-sm text-white">${row[2]}</td>
+                <td class="px-4 py-2 text-sm text-white">${row[3]}</td>
+                <td class="px-4 py-2 text-sm text-white">${row[4]}</td>
+            `;
+            wordsTableBody.appendChild(tr);
+        }
+    });
+}
+function renderLineTable(selectedSongName) {
+    lineTableBody.innerHTML = ""; // נקה את הטבלה
+    line_data.forEach(row => {
+        // בדיקה אם row[0] תואם לשם השיר שנבחר
+        if (row[0] === selectedSongName) {
+            const tr = document.createElement("tr");
+            tr.innerHTML = `
+                <td class="px-4 py-2 text-sm text-white">${row[1]}</td>
+                <td class="px-4 py-2 text-sm text-white">${row[2]}</td>
+                <td class="px-4 py-2 text-sm text-white">${row[3]}</td>
+                <td class="px-4 py-2 text-sm text-white">${row[4]}</td>
+                <td class="px-4 py-2 text-sm text-white bg-[#182834]"">${row[5]}</td>
+                <td class="px-4 py-2 text-sm text-white">${row[6]}</td>
+                <td class="px-4 py-2 text-sm text-white bg-[#182834]"">${row[7]}</td>
+                <td class="px-4 py-2 text-sm text-white">${row[8]}</td>
+            `;
+            lineTableBody.appendChild(tr);
+        }
+    });
+}
+
+function renderParsTable(selectedSongName) {
+    ParTableBody.innerHTML = ""; // נקה את הטבלה
+    par_data.forEach(row => {
+        // בדיקה אם row[0] תואם לשם השיר שנבחר
+        if (row[0] === selectedSongName) {
+            const tr = document.createElement("tr");
+            tr.innerHTML = `
+                <td class="px-4 py-2 text-sm text-white">${row[1]}</td>
+                <td class="px-4 py-2 text-sm text-white">${row[2]}</td>
+                <td class="px-4 py-2 text-sm text-white">${row[3]}</td>
+                <td class="px-4 py-2 text-sm text-white">${row[4]}</td>
+                <td class="px-4 py-2 text-sm text-white">${row[5]}</td>
+                <td class="px-4 py-2 text-sm text-white bg-[#182834]"">${row[6]}</td>
+                <td class="px-4 py-2 text-sm text-white bg-[#182834]"">${row[7]}</td>
+                <td class="px-4 py-2 text-sm text-white">${row[8]}</td>
+                <td class="px-4 py-2 text-sm text-white bg-[#182834]"">${row[9]}</td>
+                <td class="px-4 py-2 text-sm text-white">${row[10]}</td>
+            `;
+            ParTableBody.appendChild(tr);
+        }
+    });
+}
+
+function renderSongsTable() {
+    SongTableBody.innerHTML = ""; // נקה את הטבלה
+    songs_data.forEach(row => {
+        const tr = document.createElement("tr");
+        tr.innerHTML = `
+            <td class="px-4 py-2 text-sm text-white">${row[0]}</td>    
+            <td class="px-4 py-2 text-sm text-white">${row[1]}</td>
+            <td class="px-4 py-2 text-sm text-white">${row[2]}</td>
+            <td class="px-4 py-2 text-sm text-white">${row[3]}</td>
+            <td class="px-4 py-2 text-sm text-white">${row[4]}</td>
+        `;
+        SongTableBody.appendChild(tr);
+    });
+}
+
+    // renderWordsTable();
+    // if (selectedSongRadio) {
+    //     const selectedSongName = selectedSongRadio.dataset.name; // שלוף את שם השיר
+    //     alert(selectedSongName)
+    //     renderLineTable(selectedSongName); // הצגת הטבלה לשיר המסומן
+    // }
+</script>
+
+{% endblock %}

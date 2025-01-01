@@ -1,0 +1,35 @@
+# Ignore Python compiled files
+__pycache__/
+*.pyc
+
+# Ignore virtual environment
+venv/
+env/
+routes/
+
+# Ignore logs
+*.log
+
+# Ignore node_modules (אם יש פרויקט Node.js)
+node_modules/
+
+# Ignore uploaded files
+uploads/
+
+# Ignore cache files
+*.cache
+*.bak
+
+# Ignore OS-specific files
+.DS_Store
+Thumbs.db
+
+# Ignore IDE-specific files
+.vscode/
+.idea/
+
+# Ignore other directories
+path/to/ignored_directory/
+another_directory_to_ignore/
+
+package.json

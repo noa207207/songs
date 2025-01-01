@@ -1,0 +1,495 @@
+{% extends "base.html" %}
+
+{% block content %}
+<style>
+
+.group-item.selected {
+  background-color: #2a3e50; /* שינוי רקע */
+}
+
+#groups-container {
+  height: calc(100vh - 100px); /* שמירה על גובה קבוע */
+  overflow-y: auto; /* גלילה פנימית */
+}
+
+.group-item {
+  transition: background-color 0.3s ease;
+  background-color: #101a23; /* רקע רגיל */
+}
+
+.group-item:hover {
+  background-color: #2a3e50; /* רקע במעבר עכבר */
+}
+
+.group-item.selected {
+  background-color: #2a3e50; /* רקע כשנבחרה קבוצה */
+}
+#all-words,
+#selected-words {
+  max-height: calc(100vh - 100px); /* גובה מקסימלי */
+  overflow-y: auto; /* גלילה פנימית */
+}
+
+.delete-icon {
+  background-color: transparent;
+  border-radius: 50%;
+  padding: 5px;
+}
+
+.delete-icon:hover {
+  background-color: #ff4d4d; /* אדום בהיר */
+  cursor: pointer;
+  transform: scale(1.1); /* להגדיל מעט */
+}
+
+</style>
+<div
+  class="relative flex flex-col bg-[#101a23] min-h-screen overflow-hidden"
+  style="font-family: Inter, 'Noto Sans', sans-serif;"
+>
+  <div class="layout-container flex h-full flex-col">
+    <div class="layout-content-container flex flex-col flex-1">
+      <!-- כותרת -->
+      <div class="flex justify-between gap-3 p-4">
+        <p class="text-white tracking-light text-[32px] font-bold leading-tight">Groups List</p>
+      </div>
+
+      <!-- תוכן ראשי -->
+      <div class="flex gap-2 px-2 py-2 grow">
+        <!-- צד שמאל: אינפוטים ורשימת קבוצות -->
+        <div class="flex flex-col w-1/3 gap-2">
+          <!-- רשימת קבוצות -->
+          <div id="groups-container" 
+               class="flex flex-col gap-2 bg-[#223749] p-3 rounded-lg overflow-y-auto grow"
+               style="height: calc(100vh - 100px);">
+            {% for id, group_name, group_purpose in groups %}
+            <div
+              id="group-{{ id }}"
+              data-group-id="{{ id }}"
+              data-group-name="{{ group_name }}"
+              class="group-item flex items-center gap-4 p-4 rounded-lg cursor-pointer bg-[#101a23] hover:bg-[#2a3e50] transition relative"
+              onclick="selectGroup('{{ id }}', '{{ group_name }}')"
+            >
+              <div class="text-white flex items-center justify-center rounded-lg bg-[#223749] size-12">
+                <svg xmlns="http://www.w3.org/2000/svg" width="24px" height="24px" fill="currentColor" viewBox="0 0 256 256">
+                  <path
+                    d="M176,232a8,8,0,0,1-8,8H88a8,8,0,0,1,0-16h80A8,8,0,0,1,176,232Zm40-128a87.55,87.55,0,0,1-33.64,69.21A16.24,16.24,0,0,0,176,186v6a16,16,0,0,1-16,16H96a16,16,0,0,1-16-16v-6a16,16,0,0,0-6.23-12.66A87.59,87.59,0,0,1,40,104.49C39.74,56.83,78.26,17.14,125.88,16A88,88,0,0,1,216,104Zm-16,0a72,72,0,0,0-73.74-72c-39,.92-70.47,33.39-70.26,72.39a71.65,71.65,0,0,0,27.64,56.3A32,32,0,0,1,96,186v6h64v-6a32.15,32.15,0,0,1,12.47-25.35A71.65,71.65,0,0,0,200,104Zm-16.11-9.34a57.6,57.6,0,0,0-46.56-46.55,8,8,0,0,0-2.66,15.78c16.57,2.79,30.63,16.85,33.44,33.45A8,8,0,0,0,176,104a9,9,0,0,0,1.35-.11A8,8,0,0,0,183.89,94.66Z"
+                  ></path>
+                </svg>
+              </div>
+              <div class="flex flex-col flex-grow">
+                <p class="text-white text-base font-medium">{{ group_name }}</p>
+                <p class="text-[#90b0cb] text-sm">{{ group_purpose }}</p>
+              </div>
+              <div class="shrink-0">
+                <div class="text-white flex size-7 items-center justify-center delete-icon transition-all duration-200" 
+                     data-icon="TrashSimple" 
+                     data-size="24px" 
+                     data-weight="regular"
+                     onclick="deleteGroup('{{ id }}', '{{ group_name }}');">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="24px" height="24px" fill="currentColor" viewBox="0 0 256 256">
+                    <path
+                      d="M216,48H40a8,8,0,0,0,0,16h8V208a16,16,0,0,0,16,16H192a16,16,0,0,0,16-16V64h8a8,8,0,0,0,0-16ZM192,208H64V64H192ZM80,24a8,8,0,0,1,8-8h80a8,8,0,0,1,0,16H88A8,8,0,0,1,80,24Z"
+                    ></path>
+                  </svg>
+                </div>
+              </div>
+              
+            </div>
+            {% endfor %}
+          </div>
+        </div>
+        
+      
+        <!-- צד ימין: רשימות מילים -->
+        <div class="flex flex-col w-2/3 gap-2">
+          <div class="flex flex-row gap-2 overflow-y-auto grow">
+            <!-- רשימת כל המילים -->
+            <div id="all-words" class="flex flex-col w-1/2 bg-[#223749] rounded-lg overflow-y-auto grow">
+              <div class="sticky top-0 bg-[#223749] z-10 rounded-lg">
+                <h3 class="text-white text-lg font-bold">All Words</h3>
+                <input
+                  id="filter-all-words"
+                  class="form-input w-full rounded-xl text-white border border-[#314f68] bg-[#182834] h-12 placeholder:text-[#90b0cb] px-4 text-sm mb-4"
+                  value=""
+                  placeholder="Type to filter words..."
+                />
+              </div>
+              <ul id="all-words-list" class="flex p-2 flex-col gap-2"></ul>
+            </div>
+    
+      
+            <!-- כפתורים -->
+            <div class="flex flex-col justify-center items-center gap-2 grow">
+              <button
+                id="add-to-group"
+                class="equal-width bg-[#2094f3] text-white px-6 py-2 rounded-lg text-sm font-bold leading-normal hover:bg-[#1a7ec8] transition-colors duration-200"
+                style="width: 120px;"
+              >
+                Insert
+              </button>
+              <button
+                id="remove-from-group"
+                class="equal-width bg-[#2094f3] text-white px-6 py-2 rounded-lg text-sm font-bold leading-normal hover:bg-[#1a7ec8] transition-colors duration-200"
+                style="width: 120px;"
+              >
+                Remove
+              </button>
+            </div>
+
+            <div id="selected-words" class="flex flex-col w-1/2 bg-[#223749] rounded-lg overflow-y-auto grow">
+              <div class="sticky top-0 bg-[#223749] z-10 rounded-lg">
+                <h3 class="text-white text-lg font-bold">Selected Words</h3>
+                <input
+                  id="filter-selected-words"
+                  class="form-input w-full rounded-xl text-white border border-[#314f68] bg-[#182834] h-12 placeholder:text-[#90b0cb] px-4 text-sm mb-4"
+                  value=""
+                  placeholder="Type to filter words..."
+                />
+              </div>
+              <ul id="selected-words-list" class="flex p-2 flex-col gap-2"></ul>
+            </div>
+            
+          </div>
+        </div>
+        <div class="flex flex-col w-1/3 gap-4  p-4 rounded-lg">
+          <input
+            placeholder="Enter a name"
+            class="form-input w-full rounded-lg text-white border border-[#314f68] bg-[#182834] h-[48px] placeholder:text-[#90b0cb] px-4 text-base"
+          />
+          <textarea
+            placeholder="Describe the purpose of this group"
+            class="form-input w-full rounded-lg text-white border border-[#314f68] bg-[#182834] min-h-[80px] placeholder:text-[#90b0cb] px-4 text-base"
+          ></textarea>
+          <button id="add-group" class="bg-[#2094f3] text-white px-4 py-2 rounded-lg text-sm font-bold hover:bg-[#1a7ec8]">
+            Add Group
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+
+<script id="words-in-group" type="application/json">
+    {{ words_in_group | tojson }}
+</script>
+
+<script id="words" type="application/json">
+  {{ words | tojson }}
+</script>
+
+<script>
+
+document.addEventListener("DOMContentLoaded", () => {
+
+  const wordsList = document.getElementById("all-words-list");
+  const selectedWordsList = document.getElementById("selected-words-list");
+  const addToGroupButton = document.getElementById("add-to-group");
+  const removeFromGroupButton = document.getElementById("remove-from-group");
+
+  // שליפת נתונים מתוך ה-HTML
+  const allWords = JSON.parse(document.getElementById("words").textContent);
+  const wordsInGroups = JSON.parse(document.getElementById("words-in-group").textContent);
+  const addGroupButton = document.getElementById("add-group");
+
+  let selectedGroupId = null;
+  let selectedGroupName = null;
+
+  window.deleteGroup = (groupId, groupName) => {
+  if (confirm(`Are you sure you want to delete the group "${groupName}"?`)) {
+    fetch(`/delete-group/${groupName}`, { method: 'DELETE' })
+      .then(response => {
+        if (response.ok) {
+          document.getElementById(`group-${groupId}`).remove();
+          alert(`Group "${groupName}" deleted successfully.`);
+        } else {
+          alert(`Failed to delete group "${groupName}".`);
+        }
+      })
+      .catch(error => {
+        console.error('Error deleting group:', error);
+        alert('An error occurred while trying to delete the group.');
+      });
+  }
+}
+
+function filterWords(inputId, listId) {
+    const inputElement = document.getElementById(inputId);
+    const listElement = document.getElementById(listId);
+
+    inputElement.addEventListener("input", () => {
+      const filterValue = inputElement.value.toLowerCase();
+      const listItems = listElement.querySelectorAll("li");
+
+      listItems.forEach((item) => {
+        const text = item.textContent.toLowerCase();
+        if (text.includes(filterValue)) {
+          item.style.display = "flex"; // מציג את הפריט אם הוא תואם
+        } else {
+          item.style.display = "none"; // מסתיר את הפריט אם הוא לא תואם
+        }
+      });
+    });
+  }
+
+  // הפעלת הפונקציה לשני הפילטרים
+  filterWords("filter-all-words", "all-words-list");
+  filterWords("filter-selected-words", "selected-words-list");
+
+
+
+  // מילוי רשימות המילים
+  async function populateLists(groupId) {
+    wordsList.innerHTML = ""; // נקה את כל המילים
+    selectedWordsList.innerHTML = ""; // נקה את המילים בקבוצה
+
+    try {
+        // שליפת המילים מהשרת
+        const response = await fetch(`/get-words-in-group`);
+        if (!response.ok) {
+            throw new Error("Failed to fetch words from the server.");
+        }
+
+        const data = await response.json();
+        if (data.status !== "success") {
+            throw new Error("Error fetching words: " + data.message);
+        }
+
+        const wordsInGroups = data.words; // המילים בקבוצה
+        const wordsInGroup = wordsInGroups.filter((entry) => entry[2] === parseInt(groupId, 10)).map((entry) => entry[3]);
+
+        // הוספת המילים לרשימות המתאימות
+        allWords.forEach((word) => {
+            if (wordsInGroup.includes(word[1])) {
+                addWordToList(selectedWordsList, word[1], true);
+            } else {
+                addWordToList(wordsList, word[1], false);
+            }
+        });
+    } catch (error) {
+        console.error("Error populating lists:", error);
+        alert("Failed to populate lists. Please try again.");
+    }
+}
+
+
+  // הוספת מילה לרשימה
+  function addWordToList(list, word, isSelected) {
+    const li = document.createElement("li");
+    li.className = "flex items-center text-white text-sm font-normal leading-normal p-2 bg-[#101a23] rounded hover:bg-[#2a3e50] cursor-pointer";
+
+    const checkbox = document.createElement("input");
+    checkbox.type = "checkbox";
+    checkbox.className = "h-5 w-5 rounded border-[#314f68] border-2 bg-transparent text-[#2094f3] checked:bg-[#2094f3] checked:border-[#2094f3]";
+    checkbox.dataset.word = word;
+
+    const span = document.createElement("span");
+    span.className = "ml-4";
+    span.textContent = word;
+
+    li.appendChild(checkbox);
+    li.appendChild(span);
+
+    // מציאת המיקום המתאים להוספה
+    const listItems = Array.from(list.children);
+    const insertIndex = listItems.findIndex(item => {
+        const itemWord = item.querySelector("span").textContent.toLowerCase();
+        return word.toLowerCase() < itemWord; // מציאת המיקום לפי סדר אלפביתי
+    });
+
+    if (insertIndex === -1) {
+        // אם אין מקום מתאים (המילה גדולה מכולן), הוסף לסוף הרשימה
+        list.appendChild(li);
+    } else {
+        // הוסף את האלמנט למיקום המתאים
+        list.insertBefore(li, listItems[insertIndex]);
+    }
+}
+
+
+  // הוספת מילים לקבוצה
+  addToGroupButton.addEventListener("click", async () => {
+  const selectedWords = [...wordsList.querySelectorAll("input:checked")];
+  
+  selectedWords.forEach(async (wordInput) => {
+    const word = wordInput.dataset.word;
+
+    // הוספת המילה לרשימת הקבוצה
+    if (selectedGroupId) {
+      if (!wordsInGroups[selectedGroupId]) {
+        wordsInGroups[selectedGroupId] = [];
+      }
+      wordsInGroups[selectedGroupId].push(word);
+    }
+
+    // הוספת המילה לרשימת המילים הנבחרות
+    addWordToList(selectedWordsList, word, true);
+
+    // הסרת המילה מהרשימה "Words"
+    wordInput.closest("li").remove();
+
+    // קריאה ל-API לעדכון ב-Database
+    try {
+      const response = await fetch('/add-word-to-group', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          group_name: selectedGroupName, // שם הקבוצה
+          word_str: word, // המילה להוספה
+        }),
+      });
+
+      const result = await response.json();
+      if (!result.status || result.status !== "success") {
+        console.error("Failed to add word to group:", result.message);
+      }
+    } catch (error) {
+      console.error("Error adding word to group:", error);
+    }
+  });
+});
+
+
+  // הסרת מילים מהקבוצה
+  removeFromGroupButton.addEventListener("click", async () => {
+    const selectedWords = [...selectedWordsList.querySelectorAll("input:checked")];
+    selectedWords.forEach(async (wordInput) => {
+      const word = wordInput.dataset.word;
+
+      // הסרת המילה מרשימת הקבוצה
+      if (selectedGroupId && wordsInGroups[selectedGroupId]) {
+        wordsInGroups[selectedGroupId] = wordsInGroups[selectedGroupId].filter((w) => w !== word);
+      }
+
+      // הוספת המילה לרשימה "Words"
+      addWordToList(wordsList, word, false);
+
+      // הסרת המילה מהרשימה "Selected Words"
+      wordInput.closest("li").remove();
+
+      try {
+      const response = await fetch('/remove-word-from-group', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          group_name: selectedGroupName, // שם הקבוצה
+          word_str: word, // המילה להוספה
+        }),
+      });
+
+      const result = await response.json();
+      if (!result.status || result.status !== "success") {
+        console.error("Failed to add word to group:", result.message);
+      }
+    } catch (error) {
+      console.error("Error adding word to group:", error);
+    }
+    });
+  });
+
+  // בחירת קבוצה
+// בחירת קבוצה
+window.selectGroup = (groupId, groupName) => {
+  // הסר את המחלקה 'selected' מכל הקבוצות
+  const groups = document.querySelectorAll(".group-item");
+  groups.forEach(group => group.classList.remove("selected"));
+
+  // הוסף את המחלקה 'selected' לקבוצה שנבחרה
+  const selectedGroup = document.getElementById(`group-${groupId}`);
+  if (selectedGroup) {
+    selectedGroup.classList.add("selected");
+  }
+
+  // עדכון מזהי הקבוצה הנבחרת
+  selectedGroupId = groupId;
+  selectedGroupName = groupName;
+
+  // עדכון רשימות המילים
+  populateLists(groupId);
+};
+
+   
+  async function addGroup() {
+    const groupName = document.querySelector('input[placeholder="Enter a name"]').value;
+    const groupPurpose = document.querySelector('textarea[placeholder="Describe the purpose of this group"]').value;
+
+    // שליחת בקשת POST לשרת
+    const response = await fetch('/add_group', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        group_name: groupName,
+        group_purpose: groupPurpose,
+      }),
+    });
+
+    const result = await response.json();
+
+    if (response.ok && result.success) {
+      // יצירת קבוצה חדשה ב-HTML
+      const newGroup = result.group;
+      const groupsContainer = document.getElementById('groups-container');
+      
+      const groupElement = document.createElement('div');
+      groupElement.className = 'group-item flex items-center gap-4 transition-colors duration-200 px-4 py-2 rounded-lg cursor-pointer hover:bg-[#2a3e50]';
+      groupElement.setAttribute('id', `group-${newGroup.id}`);
+      groupElement.setAttribute('data-group-id', newGroup.id);
+      groupElement.setAttribute('data-group-name', newGroup.name);
+      groupElement.onclick = () => selectGroup(newGroup.id, newGroup.name);
+
+      groupElement.innerHTML = `
+        <div class="text-white flex items-center justify-center rounded-lg bg-[#223749] shrink-0 size-12">
+          <svg xmlns="http://www.w3.org/2000/svg" width="24px" height="24px" fill="currentColor" viewBox="0 0 256 256">
+            <path
+              d="M176,232a8,8,0,0,1-8,8H88a8,8,0,0,1,0-16h80A8,8,0,0,1,176,232Zm40-128a87.55,87.55,0,0,1-33.64,69.21A16.24,16.24,0,0,0,176,186v6a16,16,0,0,1-16,16H96a16,16,0,0,1-16-16v-6a16,16,0,0,0-6.23-12.66A87.59,87.59,0,0,1,40,104.49C39.74,56.83,78.26,17.14,125.88,16A88,88,0,0,1,216,104Zm-16,0a72,72,0,0,0-73.74-72c-39,.92-70.47,33.39-70.26,72.39a71.65,71.65,0,0,0,27.64,56.3A32,32,0,0,1,96,186v6h64v-6a32.15,32.15,0,0,1,12.47-25.35A71.65,71.65,0,0,0,200,104Zm-16.11-9.34a57.6,57.6,0,0,0-46.56-46.55,8,8,0,0,0-2.66,15.78c16.57,2.79,30.63,16.85,33.44,33.45A8,8,0,0,0,176,104a9,9,0,0,0,1.35-.11A8,8,0,0,0,183.89,94.66Z"
+            ></path>
+          </svg>
+        </div>
+        <div class="flex flex-col justify-center flex-1">
+          <p class="text-white text-base font-medium leading-normal line-clamp-1">${newGroup.name}</p>
+          <p class="text-[#90b0cb] text-sm font-normal leading-normal line-clamp-2">${newGroup.purpose}</p>
+        </div>
+        <div class="shrink-0">
+                <div class="text-white flex size-7 items-center justify-center delete-icon transition-all duration-200" 
+                     data-icon="TrashSimple" 
+                     data-size="24px" 
+                     data-weight="regular"
+                     onclick="deleteGroup(${newGroup.id}, '${newGroup.name}');">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="24px" height="24px" fill="currentColor" viewBox="0 0 256 256">
+                    <path
+                      d="M216,48H40a8,8,0,0,0,0,16h8V208a16,16,0,0,0,16,16H192a16,16,0,0,0,16-16V64h8a8,8,0,0,0,0-16ZM192,208H64V64H192ZM80,24a8,8,0,0,1,8-8h80a8,8,0,0,1,0,16H88A8,8,0,0,1,80,24Z"
+                    ></path>
+                  </svg>
+                </div>
+              </div>
+      `;
+
+      // הוספת הקבוצה החדשה לרשימה
+      groupsContainer.appendChild(groupElement);
+
+      // ניקוי השדות
+      document.querySelector('input[placeholder="Enter a name"]').value = '';
+      document.querySelector('textarea[placeholder="Describe the purpose of this group"]').value = '';
+      
+      alert('Group added successfully!');
+    } else {
+            // טיפול במקרה שהקבוצה כבר קיימת
+            alert(result.message || 'An error occurred while adding the group.');
+        }
+  }
+
+
+
+    addGroupButton.addEventListener("click", addGroup);
+});
+</script>
+
+
+{% endblock %}

@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>{% block title %}TuneDB{% endblock %}</title>
+    <!-- TailwindCSS -->
+    <link rel="preconnect" href="https://fonts.gstatic.com/" crossorigin="" />
+    <link
+      rel="stylesheet"
+      as="style"
+      onload="this.rel='stylesheet'"
+      href="https://fonts.googleapis.com/css2?display=swap&amp;family=Inter%3Awght%40400%3B500%3B700%3B900&amp;family=Noto+Sans%3Awght%40400%3B500%3B700%3B900"
+    />
+    <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+    <style>
+      html,
+      body {
+        margin: 0;
+        padding: 0;
+        height: 100%; /* תופס את גובה המסך */
+        overflow: hidden; /* מניעת גלילה מיותרת */
+      }
+      .h-screen {
+        height: 100vh; /* התאמת הגובה למסך */
+      }
+      .sidebar {
+        height: 100%; /* כיסוי מלא של ה-sidebar */
+      }
+      .main-content {
+        overflow-y: auto; /* גלילה פנימית לתוכן הראשי */
+      }
+    </style>
+  </head>
+  <body class="bg-[#101a23] text-white min-h-screen flex flex-col">
+    <div class="flex grow">
+      <!-- Sidebar -->
+      <aside class="w-36 bg-[#223749] h-screen overflow-y-auto">
+        <div class="p-4 flex flex-col gap-6">
+          <h2 class="text-lg font-bold">TuneDB</h2>
+          <nav class="flex flex-col gap-4">
+            <a
+              href="/"
+              class="flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium leading-normal {% if active_page == 'songs' %}text-[#2094f3]{% else %}text-white hover:text-[#2094f3]{% endif %}"
+              >
+              <svg xmlns="http://www.w3.org/2000/svg" width="24px" height="24px" fill="currentColor" viewBox="0 0 256 256">
+                <path
+                d="M210.3,56.34l-80-24A8,8,0,0,0,120,40V148.26A48,48,0,1,0,136,184V98.75l69.7,20.91A8,8,0,0,0,216,112V64A8,8,0,0,0,210.3,56.34ZM88,216a32,32,0,1,1,32-32A32,32,0,0,1,88,216ZM200,101.25l-64-19.2V50.75L200,70Z"
+                ></path>
+              </svg>
+              Songs
+            </a>
+            <a
+              href="/search"
+              class="flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium leading-normal {% if active_page == 'search' %}text-[#2094f3]{% else %}text-white hover:text-[#2094f3]{% endif %}"
+              >
+              <svg xmlns ="http://www.w3.org/2000/svg" width="24px" height="24px" fill="currentColor" viewBox="0 0 256 256">
+                <path d="M229.66,218.34l-50.07-50.06a88.11,88.11,0,1,0-11.31,11.31l50.06,50.07a8,8,0,0,0,11.32-11.32ZM40,112a72,72,0,1,1,72,72A72.08,72.08,0,0,1,40,112Z"></path>
+              </svg>
+              Search
+            </a>
+            <a
+            href="/group"
+            class="flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium leading-normal {% if active_page == 'group' %}text-[#2094f3]{% else %}text-white hover:text-[#2094f3]{% endif %}"
+            >
+            <svg xmlns="http://www.w3.org/2000/svg" width="24px" height="24px" fill="currentColor" viewBox="0 0 256 256">
+              <path
+                    d="M244.8,150.4a8,8,0,0,1-11.2-1.6A51.6,51.6,0,0,0,192,128a8,8,0,0,1-7.37-4.89,8,8,0,0,1,0-6.22A8,8,0,0,1,192,112a24,24,0,1,0-23.24-30,8,8,0,1,1-15.5-4A40,40,0,1,1,219,117.51a67.94,67.94,0,0,1,27.43,21.68A8,8,0,0,1,244.8,150.4ZM190.92,212a8,8,0,1,1-13.84,8,57,57,0,0,0-98.16,0,8,8,0,1,1-13.84-8,72.06,72.06,0,0,1,33.74-29.92,48,48,0,1,1,58.36,0A72.06,72.06,0,0,1,190.92,212ZM128,176a32,32,0,1,0-32-32A32,32,0,0,0,128,176ZM72,120a8,8,0,0,0-8-8A24,24,0,1,1,87.24,82a8,8,0,1,0,15.5-4A40,40,0,1,0,37,117.51,67.94,67.94,0,0,0,9.6,139.19a8,8,0,1,0,12.8,9.61A51.6,51.6,0,0,1,64,128,8,8,0,0,0,72,120Z"
+                  ></path>
+            </svg>
+            Groups
+          </a>
+
+         <a
+          href="/indexing"
+          class="flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium leading-normal {% if active_page == 'indexing' %}text-[#2094f3]{% else %}text-white hover:text-[#2094f3]{% endif %}"
+          >
+          <svg xmlns="http://www.w3.org/2000/svg" width="24px" height="24px" fill="currentColor" viewBox="0 0 256 256">
+            <path
+                    d="M224,128a8,8,0,0,1-8,8H40a8,8,0,0,1,0-16H216A8,8,0,0,1,224,128ZM40,72H216a8,8,0,0,0,0-16H40a8,8,0,0,0,0,16ZM216,184H40a8,8,0,0,0,0,16H216a8,8,0,0,0,0-16Z"
+                  ></path>
+          </svg>
+          Indexing
+        </a>
+        <a
+              href="/stat"
+              class="flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium leading-normal {% if active_page == 'stat' %}text-[#2094f3]{% else %}text-white hover:text-[#2094f3]{% endif %}"
+              >
+              <svg xmlns="http://www.w3.org/2000/svg" width="24px" height="24px" fill="currentColor" viewBox="0 0 256 256">
+                <path
+                    d="M224,200h-8V40a8,8,0,0,0-8-8H152a8,8,0,0,0-8,8V80H96a8,8,0,0,0-8,8v40H48a8,8,0,0,0-8,8v64H32a8,8,0,0,0,0,16H224a8,8,0,0,0,0-16ZM160,48h40V200H160ZM104,96h40V200H104ZM56,144H88v56H56Z"
+                  ></path>
+              </svg>
+              Statistics
+            </a> 
+            <a
+            href="/rhymes"
+            class="flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium leading-normal {% if active_page == 'rhymes' %}text-[#2094f3]{% else %}text-white hover:text-[#2094f3]{% endif %}"
+            >
+            <svg xmlns="http://www.w3.org/2000/svg" width="24px" height="24px" fill="currentColor" viewBox="0 0 256 256">
+              <path d="M227.32,73.37,182.63,28.69a16,16,0,0,0-22.63,0L36.69,152A15.86,15.86,0,0,0,32,163.31V208a16,16,0,0,0,16,16H216a8,8,0,0,0,0-16H115.32l112-112A16,16,0,0,0,227.32,73.37ZM136,75.31,152.69,92,68,176.69,51.31,160ZM48,208V179.31L76.69,208Zm48-3.31L79.32,188,164,103.31,180.69,120Zm96-96L147.32,64l24-24L216,84.69Z"></path>
+            </svg>
+            Rhymes
+          </a>  
+          <a
+          href="/expressions"
+          class="flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium leading-normal {% if active_page == 'expressions' %}text-[#2094f3]{% else %}text-white hover:text-[#2094f3]{% endif %}"
+          >
+          <svg xmlns="http://www.w3.org/2000/svg" width="24px" height="24px" fill="currentColor" viewBox="0 0 256 256">
+            <path
+                    d="M128,24A104,104,0,1,0,232,128,104.11,104.11,0,0,0,128,24ZM101.63,168h52.74C149,186.34,140,202.87,128,215.89,116,202.87,107,186.34,101.63,168ZM98,152a145.72,145.72,0,0,1,0-48h60a145.72,145.72,0,0,1,0,48ZM40,128a87.61,87.61,0,0,1,3.33-24H81.79a161.79,161.79,0,0,0,0,48H43.33A87.61,87.61,0,0,1,40,128ZM154.37,88H101.63C107,69.66,116,53.13,128,40.11,140,53.13,149,69.66,154.37,88Zm19.84,16h38.46a88.15,88.15,0,0,1,0,48H174.21a161.79,161.79,0,0,0,0-48Zm32.16-16H170.94a142.39,142.39,0,0,0-20.26-45A88.37,88.37,0,0,1,206.37,88ZM105.32,43A142.39,142.39,0,0,0,85.06,88H49.63A88.37,88.37,0,0,1,105.32,43ZM49.63,168H85.06a142.39,142.39,0,0,0,20.26,45A88.37,88.37,0,0,1,49.63,168Zm101.05,45a142.39,142.39,0,0,0,20.26-45h35.43A88.37,88.37,0,0,1,150.68,213Z"
+                  ></path>
+          </svg>
+          Expres
+        </a>      
+      </nav>
+        </div>
+      </aside>
+
+      <!-- Main content -->
+      <main class="flex-1 p-4 bg-[#101a23] overflow-y-auto">
+        {% block content %}{% endblock %}
+      </main>
+    </div>
+  </body>
+</html>

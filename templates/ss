@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Song Management - Songs</title>
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+</head>
+<body>
+    <!-- Navigation Bar -->
+    <nav class="navbar navbar-expand-lg navbar-dark bg-primary">
+        <div class="container-fluid">
+            <a class="navbar-brand" href="/">Song Management</a>
+        </div>
+    </nav>
+
+    <!-- Main Container -->
+    <div class="container mt-5">
+        <h2 class="text-center mb-4">Songs Library</h2>
+        <div class="row">
+            <!-- Sidebar - Songs List -->
+            <div class="col-md-3">
+                <h4>Available Songs</h4>
+                <ul class="list-group" id="songList">
+                    {% for song in songs %}
+                    <li class="list-group-item">
+                        <a href="/songs/{{ song.id }}" class="text-decoration-none">{{ song.song_name }}</a>
+                    </li>
+                    {% endfor %}
+                </ul>
+                <form action="/upload" method="POST" enctype="multipart/form-data" class="mt-4">
+                    <label for="fileInput" class="form-label">Upload New Song</label>
+                    <input class="form-control" type="file" id="fileInput" name="file" required>
+                    <button type="submit" class="btn btn-primary mt-2 w-100">Upload</button>
+                </form>
+            </div>
+    
+            <!-- Main Content - Song Details -->
+            <div class="col-md-9">
+                {% if song_details %}
+                <!-- Song Details Section -->
+                <div class="card mb-3">
+                    <div class="card-header bg-primary text-white">
+                        Song Details
+                    </div>
+                    <div class="card-body d-flex align-items-center justify-content-between">
+                        <h5 class="mb-0">{{ song_details.song_name }}</h5>
+                        <p class="mb-0">
+                            <strong>Release Date:</strong> {{ song_details.release_date or "N/A" }} |
+                            <strong>Artist:</strong> {{ song_details.artist or "N/A" }} |
+                            <strong>Album:</strong> {{ song_details.album or "N/A" }}
+                        </p>
+                        <!-- Edit Button -->
+                        <button class="btn btn-warning" data-bs-toggle="modal" data-bs-target="#editSongModal">Edit</button>
+                    </div>
+                </div>
+
+                <!-- Modal for Editing Song Details -->
+                <div class="modal fade" id="editSongModal" tabindex="-1" aria-labelledby="editSongModalLabel" aria-hidden="true">
+                <div class="modal-dialog">
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <h5 class="modal-title" id="editSongModalLabel">Edit Song Details</h5>
+                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                        </div>
+                        <div class="modal-body">
+                            <form id="editSongForm">
+                                <div class="mb-3">
+                                    <label for="songNameInput" class="form-label">Song Name</label>
+                                    <input type="text" class="form-control" id="songNameInput" value="{{ song_details.song_name }}">
+                                </div>
+                                <div class="mb-3">
+                                    <label for="releaseDateInput" class="form-label">Release Date</label>
+                                    <input type="text" class="form-control" id="releaseDateInput" value="{{ song_details.release_date or '' }}">
+                                </div>
+                                <div class="mb-3">
+                                    <label for="artistInput" class="form-label">Artist</label>
+                                    <input type="text" class="form-control" id="artistInput" value="{{ song_details.artist or '' }}">
+                                </div>
+                                <div class="mb-3">
+                                    <label for="albumInput" class="form-label">Album</label>
+                                    <input type="text" class="form-control" id="albumInput" value="{{ song_details.album or '' }}">
+                                </div>
+                            </form>
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                            <button type="button" class="btn btn-primary" id="saveChangesButton">Save Changes</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+                <!-- Song Text Section -->
+                <div class="card">
+                    <div class="card-header bg-secondary text-white">
+                        Song Text
+                    </div>
+                    <div class="card-body">
+                        <div>{{ song_details.paragraphes|safe }}</div>
+                    </div>
+                </div>
+                {% else %}
+                <p>Select a song from the list to view details.</p>
+                {% endif %}
+            </div>
+
+
+    <!-- Footer -->
+    <footer class="bg-light text-center text-lg-start mt-5">
+        <div class="text-center p-3">
+            © 2024 Song Management System | Built for Educational Purposes
+        </div>
+    </footer>
+
+    <!-- Bootstrap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.11.6/dist/umd/popper.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.min.js"></script>
+</body>
+</html>

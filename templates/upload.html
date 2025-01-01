@@ -1,0 +1,387 @@
+{% extends "base.html" %}
+
+{% block title %}Songs Library{% endblock %}
+
+{% block content %}
+<div class="flex h-full">
+  <!-- צד שמאל: רשימת שירים -->
+  <div class="w-1/4 bg-[#101a23] overflow-hidden p-4 flex flex-col" style="max-height: calc(100vh - 40px);">
+    <h2 class="text-white text-[22px] font-bold leading-tight tracking-[-0.015em] mb-4">Songs</h2>
+    
+    <!-- כפתור Browse New Songs -->
+    <button
+      id="browse-new-songs"
+      class="bg-[#2094f3] text-white rounded-lg px-4 py-2 mb-4 text-sm font-bold leading-normal hover:bg-[#1a7ec8] transition-colors duration-200"
+      onclick="document.getElementById('fileInput').click();"
+    >
+      Browse New Songs
+    </button>
+    <input 
+          type="file" 
+          id="fileInput" 
+          class="hidden" 
+          multiple
+          onchange="handleFileSelect(event)" 
+        />
+    
+    <div class="flex-1 overflow-y-auto flex flex-col gap-4">
+      {% for id, song_name in songs %}
+      <div class="flex items-center gap-4 bg-[#101a23] px-4 min-h-[72px] py-2 justify-between">
+        <div class="flex items-center gap-4">
+          <div
+            class="bg-center bg-no-repeat aspect-square bg-cover rounded-lg size-14"
+            style='background-image: url("https://cdn.usegalileo.ai/sdxl10/fa79df96-3fce-4cfb-bacb-d49e2ab64187.png");'
+          ></div>
+          <div class="flex flex-col justify-center">
+            <p class="text-white text-base font-medium leading-normal line-clamp-1">{{ song_name }}</p>
+            <p class="text-[#90b0cb] text-sm font-normal leading-normal line-clamp-2">{{ id }}</p>
+          </div>
+        </div>
+        <!-- רדיו לשיר -->
+        <input
+          type="radio"
+          name="song-selection"
+          class="h-5 w-5 border-[#314f68] border-2 bg-transparent text-[#2094f3] checked:bg-[#2094f3] checked:border-[#2094f3]"
+          data-id="{{ id }}"
+          data-name="{{ song_name }}"
+          onchange=handleSongSelection(event)
+        />
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+  
+
+  <!-- צד ימין: טופס העלאה -->
+  <div class="w-2/3 bg-[#101a23] p-4">
+    <h2 class="text-white text-[18px] font-bold leading-tight tracking-[-0.015em] mb-4">Song Details</h2>
+    
+    <!-- רשת פרטי השיר -->
+    <div class="grid grid-cols-3 gap-3">
+      <input
+        placeholder="Poet's Name"
+        class="form-input w-full rounded-lg bg-[#223749] text-white h-10 px-3 placeholder:text-[#90b0cb]"
+      />
+      <input
+        placeholder="Composer's Name"
+        class="form-input w-full rounded-lg bg-[#223749] text-white h-10 px-3 placeholder:text-[#90b0cb]"
+      />
+      <select
+        id="creationYear"
+        class="form-input w-full rounded-lg bg-[#223749] text-white h-10 px-3 placeholder:text-[#90b0cb]"
+      ></select>
+      <input
+        placeholder="Performance Video Link"
+        class="form-input w-full rounded-lg bg-[#223749] text-white h-10 px-3 placeholder:text-[#90b0cb]"
+      />
+      <input
+        placeholder="Performer's Name"
+        class="form-input w-full rounded-lg bg-[#223749] text-white h-10 px-3 placeholder:text-[#90b0cb]"
+      />
+      <!-- כפתור שמירה -->
+      <div class="flex gap-4">
+        <!-- כפתור Save -->
+        <button
+          class="form-input w-full rounded-lg bg-[#2094f3] text-white h-10 px-3 placeholder:text-[#90b0cb] hover:bg-[#1a7ec8] transition-colors duration-200"
+          onclick="saveDetails()"
+        >
+          Save
+        </button>
+      
+        <!-- כפתור Search -->
+        <button
+          class="form-input w-full rounded-lg bg-[#2094f3] text-white h-10 px-3 placeholder:text-[#90b0cb] hover:bg-[#1a7ec8] transition-colors duration-200"
+          onclick="searchDetails()"
+        >
+          Search
+        </button>
+      </div>
+    </div>
+
+    <table class="w-full border-collapse mt-4">
+      <thead>
+          <tr class="bg-[#182834]">
+              <th class="px-4 py-4 text-left text-white w-[400px] text-sm font-medium leading-normal sticky top-0 bg-[#182834] z-10">Song Name</th>  
+              <th class="px-4 py-4 text-left text-white w-[400px] text-sm font-medium leading-normal sticky top-0 bg-[#182834] z-10">Poet's Name</th>
+              <th class="px-4 py-4 text-left text-white w-[400px] text-sm font-medium leading-normal sticky top-0 bg-[#182834] z-10">Composer's Name</th>
+              <th class="px-4 py-4 text-left text-white w-[400px] text-sm font-medium leading-normal sticky top-0 bg-[#182834] z-10">Year</th>
+              <th class="px-4 py-4 text-left text-white w-[400px] text-sm font-medium leading-normal sticky top-0 bg-[#182834] z-10">Performance Video Link</th>
+              <th class="px-4 py-4 text-left text-white w-[400px] text-sm font-medium leading-normal sticky top-0 bg-[#182834] z-10">Performer's Name</th>
+          </tr>
+      </thead>
+      <tbody id="details-table-body">
+          <!-- תוכן דינמי -->
+      </tbody>
+  </table>
+  </div>
+
+  
+  
+  
+  
+</div>
+
+<script id="details-data" type="application/json">
+  {{ details | tojson }}
+</script>
+
+
+<script>
+
+const detailsTableBody = document.getElementById("details-table-body");
+const details_data = JSON.parse(document.getElementById("details-data").textContent);
+
+function handleSongSelection(event) {
+  const selectedRadio = event.target; // הרדיו שנבחר
+  const songName = selectedRadio.getAttribute("data-name"); // שליפת שם השיר
+  if (songName) {
+    renderDetailsTable(songName); // קריאה לפונקציה עם שם השיר
+  } else {
+    console.error("No song name found!");
+  }
+}
+
+async function saveDetails() {
+    // קבלת השיר שנבחר
+    const selectedRadio = document.querySelector('input[name="song-selection"]:checked');
+    if (!selectedRadio) {
+        alert("Please select a song first.");
+        return;
+    }
+    const songName = selectedRadio.getAttribute("data-name");
+
+    // קבלת הערכים מהשדות
+    const poetName = document.querySelector('input[placeholder="Poet\'s Name"]').value;
+    const composerName = document.querySelector('input[placeholder="Composer\'s Name"]').value;
+    const creationYear = document.getElementById("creationYear").value;
+    const performanceLink = document.querySelector('input[placeholder="Performance Video Link"]').value;
+    const performerName = document.querySelector('input[placeholder="Performer\'s Name"]').value;
+
+    // שליחת הנתונים לשרת
+    try {
+        const response = await fetch("/save-song-details", {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+                song_name: songName,
+                poet: poetName,
+                composer: composerName,
+                creation_year: creationYear,
+                video_link: performanceLink,
+                performer_name: performerName,
+            }),
+        });
+
+        if (response.ok) {
+            alert("Song details saved successfully!");
+        } else {
+            const errorData = await response.json();
+            alert(`Failed to save song details: ${errorData.error}`);
+        }
+    } catch (error) {
+        console.error("Error saving song details:", error);
+        alert("An error occurred while saving the details.");
+    }
+}
+
+function searchDetails() {
+    const radioButtons = document.querySelectorAll('input[type="radio"][name="song-selection"]');
+    radioButtons.forEach(radio => {
+        radio.checked = false; // בטל את הבחירה של כל הכפתורים
+    });
+    // אסוף את הערכים מכל שדות הקלט
+    const poetName = document.querySelector("input[placeholder=\"Poet's Name\"]").value.trim();
+    const composerName = document.querySelector("input[placeholder=\"Composer's Name\"]").value.trim();
+    const creationYear = document.getElementById("creationYear").value.trim();
+    const performanceVideoLink = document.querySelector("input[placeholder=\"Performance Video Link\"]").value.trim();
+    const performerName = document.querySelector("input[placeholder=\"Performer's Name\"]").value.trim();
+
+    // נקה את הטבלה
+    detailsTableBody.innerHTML = "";
+
+
+    // בצע חיפוש על כל השורות
+    details_data.forEach(row => {
+        // בדוק אם השורה עונה לקריטריונים
+
+        const matchesPoet = !poetName || row[2].toLowerCase().includes(poetName.toLowerCase());
+        const matchesComposer = !composerName || row[3].toLowerCase().includes(composerName.toLowerCase());
+        const matchesYear = !creationYear || row[4] === creationYear;
+        // const matchesLink = !performanceVideoLink || row[5].toLowerCase().includes(performanceVideoLink.toLowerCase());
+        const matchesPerformer = !performerName || row[5].toLowerCase().includes(performerName.toLowerCase());
+
+        
+        
+        if (matchesPoet && matchesComposer && matchesYear && matchesPerformer) {
+            // צור שורה חדשה
+            const tr = document.createElement("tr");
+            tr.innerHTML = `
+                <td class="px-4 py-2 text-sm text-white">${row[1]}</td>
+                <td class="px-4 py-2 text-sm text-white">${row[2]}</td>
+                <td class="px-4 py-2 text-sm text-white">${row[3]}</td>
+                <td class="px-4 py-2 text-sm text-white">${row[4]}</td>
+                <td class="px-4 py-2 text-sm text-white">${row[5]}</td>
+                <td class="px-4 py-2 text-sm text-white">${row[6]}</td>
+            `;
+            detailsTableBody.appendChild(tr);
+        }
+    });
+}
+
+
+
+
+function renderDetailsTable(song_name) {
+
+    detailsTableBody.innerHTML = ""; // נקה את הטבלה
+    details_data.forEach(row => {
+
+        if (row[1] === song_name) { // בדוק אם הערך בשדה row[1] שווה ל-song_name
+            const tr = document.createElement("tr");
+            tr.innerHTML = `
+                <td class="px-4 py-2 text-sm text-white">${row[1]}</td>    
+                <td class="px-4 py-2 text-sm text-white">${row[2]}</td>
+                <td class="px-4 py-2 text-sm text-white">${row[3]}</td>
+                <td class="px-4 py-2 text-sm text-white">${row[4]}</td>
+                <td class="px-4 py-2 text-sm text-white">${row[5]}</td>
+                <td class="px-4 py-2 text-sm text-white">${row[6]}</td>
+            `;
+            detailsTableBody.appendChild(tr);
+        }
+    });
+}
+
+
+const select = document.getElementById("creationYear");
+const currentYear = new Date().getFullYear();
+
+// הוספת ערך "NULL" לראש הרשימה
+const nullOption = document.createElement("option");
+nullOption.value = ""; // ערך ריק להתעלמות
+nullOption.textContent = "Creation Year - NULL"; // טקסט שיוצג
+select.appendChild(nullOption);
+
+// הוספת שאר השנים
+for (let year = currentYear; year >= 1960; year--) {
+  const option = document.createElement("option");
+  option.value = year;
+  option.textContent = year;
+  select.appendChild(option);
+}
+
+  let selectedFiles = [];
+
+  function handleFileSelect(event) {
+    selectedFiles = Array.from(event.target.files); // מאחסן את כל הקבצים שנבחרו במערך
+    console.log("Selected files:", selectedFiles);
+
+    // הצגת שמות הקבצים כמשוב למשתמש (אופציונלי)
+    const fileListDisplay = document.getElementById("fileListDisplay");
+    if (fileListDisplay) {
+        fileListDisplay.innerHTML = selectedFiles
+            .map(file => `<li class="text-white">${file.name}</li>`)
+            .join("");
+    }
+
+    processFiles();
+  }
+
+  async function processFiles() {
+    if (!selectedFiles || selectedFiles.length === 0) {
+        alert("Please select one or more files before saving.");
+        return;
+    }
+
+    const formData = new FormData();
+    for (const file of selectedFiles) {
+        formData.append("files", file); // שימו לב לשימוש ברבים
+    }
+
+    try {
+        const response = await fetch("/upload", {
+            method: "POST",
+            body: formData,
+        });
+
+        if (response.ok) {
+            const result = await response.json();
+            alert(`Files processed: ${result.message}`);
+            // await refreshSongsList();
+        } else {
+            throw new Error("Failed to upload files.");
+        }
+    } catch (error) {
+        console.error(error);
+        alert("Error uploading files.");
+    }
+}
+
+async function refreshSongsList() {
+  try {
+    const response = await fetch("/songs-list"); // נתיב לקבלת רשימת השירים
+    if (response.ok) {
+      const songs = await response.json();
+      alert(songs)
+      updateSongsUI(songs);
+    } else {
+      throw new Error("Failed to fetch songs.");
+    }
+  } catch (error) {
+    console.error("Error fetching songs:", error);
+    alert("Failed to refresh songs list.");
+  }
+}
+
+function updateSongsUI(songs) {
+  const songsContainer = document.querySelector('.flex-1.overflow-y-auto');
+  songsContainer.innerHTML = ""; // נקה את הרשימה הקיימת
+
+  songs.forEach(song => {
+  const id = song[0];
+  const songName = song[1];
+
+  const songElement = document.createElement("div");
+  songElement.className = "flex items-center gap-4 bg-[#101a23] px-4 min-h-[72px] py-2 justify-between";
+  songElement.innerHTML = `
+    <div class="flex items-center gap-4">
+      <div
+        class="bg-center bg-no-repeat aspect-square bg-cover rounded-lg size-14"
+        style='background-image: url("https://cdn.usegalileo.ai/sdxl10/fa79df96-3fce-4cfb-bacb-d49e2ab64187.png");'
+      ></div>
+      <div class="flex flex-col justify-center">
+        <p class="text-white text-base font-medium leading-normal line-clamp-1">${songName}</p>
+        <p class="text-[#90b0cb] text-sm font-normal leading-normal line-clamp-2">${id}</p>
+      </div>
+    </div>
+    <!-- רדיו לשיר -->
+    <input
+      type="radio"
+      name="song-selection"
+      class="h-5 w-5 border-[#314f68] border-2 bg-transparent text-[#2094f3] checked:bg-[#2094f3] checked:border-[#2094f3]"
+      data-id="${id}"
+      data-name="${songName}"
+    />
+  `;
+  songsContainer.appendChild(songElement);
+});
+
+}
+
+
+  function clearFields() {
+    document.querySelector("input[placeholder=\"Poet's Name\"]").value = "";
+    document.querySelector("input[placeholder=\"Composer's Name\"]").value = "";
+    document.getElementById("creationYear").value = "";
+    document.querySelector("input[placeholder=\"Performance Video Link\"]").value = "";
+    document.querySelector("input[placeholder=\"Performer's Name\"]").value = "";
+    document.getElementById("fileInput").value = null;
+    document.getElementById("uploadStatus").innerText = "";
+  }
+
+  function loadSongDetails(songId) {
+    alert(`Song details will be loaded for song ID: ${songId}`);
+  }
+</script>
+{% endblock %}
