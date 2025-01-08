@@ -54,7 +54,13 @@
             <div class="flex overflow-hidden rounded-xl border border-[#314f68] bg-[#101a23]">
                 <!-- Wrapper עם גלילה -->
                 <div class="overflow-auto h-[calc(100vh-200px)] w-full">
-                    <table class="w-full border-collapse">
+                    <button
+                        id="export-to-csv"
+                        class="bg-[#2094f3] text-white rounded-lg px-4 py-2 mb-4 text-sm font-bold leading-normal hover:bg-[#1a7ec8] transition-colors duration-200"
+                        >
+                        Export to CSV
+                        </button>
+                    <table class="w-full border-collapse" id="export-table">
                         <thead>
                             <tr class="bg-[#182834]">
                                 <th class="px-4 py-4 text-left text-white w-[400px] text-sm font-medium leading-normal sticky top-0 bg-[#182834] z-10">Word</th>
@@ -77,7 +83,17 @@
                                         />
                                     </label>
                                 </th>
-                                <th class="px-4 py-2 text-left text-white text-sm font-medium leading-normal sticky top-[48px] bg-[#182834] z-10"></th>
+                                <th class="px-4 py-0 text-left text-white text-sm font-medium leading-normal sticky top-[48px] bg-[#182834] z-10">
+                                    <label class="flex flex-col flex-1">
+                                        <p class="text-white text-sm font-medium pb-1"></p>
+                                        <input
+                                            id="filter-song-input"
+                                            class="form-input w-full rounded-xl text-white border border-[#314f68] bg-[#182834] h-12 placeholder:text-[#90b0cb] px-4 text-sm"
+                                            value=""
+                                            placeholder="Type to filter..."
+                                        />
+                                    </label>
+                                </th>
                                 <th class="px-4 py-2 text-left text-white text-sm font-medium leading-normal sticky top-[48px] bg-[#182834] z-10">
                                     <label class="flex flex-col">
                                         <p class="text-white text-xs font-medium leading-normal pb-0"></p>
@@ -167,12 +183,44 @@
 
 <script>
 
+document.getElementById("export-to-csv").addEventListener("click", function () {
+    const table = document.getElementById("export-table");
+    const rows = table.querySelectorAll("tbody tr"); // רק השורות עם הנתונים
+    const csvContent = [];
+
+    // הוספת כותרות
+    const headers = Array.from(table.querySelectorAll("thead th")).map((th) =>
+      th.textContent.trim()
+    );
+    csvContent.push(headers.join(","));
+
+    // הוספת שורות הטבלה
+    rows.forEach((row) => {
+      const cols = Array.from(row.querySelectorAll("td")).map((td) =>
+        `"${td.textContent.trim()}"`
+      );
+      csvContent.push(cols.join(","));
+    });
+
+    // יצירת Blob והורדה
+    const blob = new Blob([csvContent.join("\n")], { type: "text/csv" });
+    const link = document.createElement("a");
+    link.href = URL.createObjectURL(blob);
+    link.download = "table-data.csv";
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  });
+
+
 document.addEventListener("DOMContentLoaded", () => {
     const data = JSON.parse(document.getElementById("index-data").textContent);
     const wordsInGroup = JSON.parse(document.getElementById("words-in-group-data").textContent); // Load words_in_group data
     const tableBody = document.getElementById("table-body");
 
     const filterInput = document.getElementById("filter-input");
+    const filterSongInput = document.getElementById("filter-song-input");
+
     const filterParagraphInput = document.getElementById("filter-paragraph");
     const filterLineNumberInput = document.getElementById("filter-line-number");
     const filterWordNumberInput = document.getElementById("filter-word-number");
@@ -212,6 +260,7 @@ document.addEventListener("DOMContentLoaded", () => {
     // עדכון הטבלה על פי הפילטרים
     function filterData() {
         const filterValue = filterInput.value.toLowerCase();
+        const filterSongValue = filterSongInput.value.toLowerCase();
         const paragraphFilter = filterParagraphInput.value;
         const lineNumberFilter = filterLineNumberInput.value;
         const wordNumberFilter = filterWordNumberInput.value;
@@ -225,6 +274,8 @@ document.addEventListener("DOMContentLoaded", () => {
             const matchesSongs = selectedSongs.length === 0 || selectedSongs.includes(row[2].toLowerCase());
             const matchesFilterValue =
                 row[1].toLowerCase().includes(filterValue);
+            const matchesSongFilterValue =
+                row[2].toLowerCase().includes(filterSongValue);
 
             const matchesGroup =
                 selectedGroups.length === 0 ||
@@ -232,7 +283,7 @@ document.addEventListener("DOMContentLoaded", () => {
                     wordsInGroup.some(wordGroup => wordGroup[2] == groupId && wordGroup[1] == row[0])
                 );
 
-            return matchesParagraph && matchesLineNumber && matchesWordNumber && matchesSongs && matchesFilterValue && matchesGroup;
+            return matchesParagraph && matchesLineNumber && matchesWordNumber && matchesSongs && matchesFilterValue && matchesGroup && matchesSongFilterValue;
         });
 
         renderTable(filteredData);
@@ -243,6 +294,7 @@ document.addEventListener("DOMContentLoaded", () => {
     filterLineNumberInput.addEventListener("input", filterData);
     filterWordNumberInput.addEventListener("input", filterData);
     filterInput.addEventListener("input", filterData);
+    filterSongInput.addEventListener("input", filterData);
     songCheckboxes.forEach(checkbox => checkbox.addEventListener("change", filterData));
     groupCheckboxes.forEach(checkbox => checkbox.addEventListener("change", filterData));
 

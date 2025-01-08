@@ -81,51 +81,19 @@ async def remove_song_details_line(details_line_id):
     Returns:
         pd.DataFrame: A DataFrame containing the search results.
 """
-async def get_search_details_df(song_name = None, poet = None, composer = None, creation_year = None, performer_name = None):
+async def get_search_details_df(song_name = None, poet = None, composer = None, creation_year = None, performance_video_link = None, performer_name = None):
     params = {
         'song_name': song_name,
         'poet': poet,
         'composer': composer,
         'creation_year': creation_year,
+        'Performance_Video_Link': performance_video_link,
         'performer_name': performer_name
         }
     song_id_query_df = await get_query_from_db(search_details, None, params=params)
     if song_id_query_df.empty:
         return []
     return list(song_id_query_df.itertuples(index=False, name=None))
-
-"""
-    Reads the content of a song file from the directory.
-
-    Args:
-        song_name (str): The name of the song file to read.
-
-    Returns:
-        tuple: The song name and its content.
-
-    Raises:
-        FileNotFoundError: If the song file does not exist.
-"""
-async def read_song(song_name):
-    directory_path = "./static/songs"
-    full_song_path = os.path.join(directory_path, song_name + ".txt")
-    if not os.path.exists(full_song_path):
-        raise FileNotFoundError(f"The song {song_name} was not found.")
-    async with aiofiles.open(full_song_path, 'r', encoding='utf-8') as file:
-        return song_name, await file.read()
-
-"""
-    Retrieves the content of multiple song files as a dictionary.
-
-    Args:
-        song_names_list (list): A list of song names to retrieve.
-
-    Returns:
-        dict: A dictionary where keys are song names and values are their contents.
-"""
-async def songs_words_dict(song_names_list):
-    songs_contents_dict = dict(await asyncio.gather(*(read_song(song_name) for song_name in song_names_list)))
-    return songs_contents_dict
 
 """
     Inserts a new group into the database if it does not already exist.
@@ -181,16 +149,15 @@ async def delete_group(group_name):
         'group_name': group_name,
     }
     existing_group_df = await get_query_from_db(get_group_id, None, params=search_params)
-    
     if not existing_group_df.empty:
         group_id = int(existing_group_df.iloc[0, 0])
-        print(group_id)
         params = {
             'group_id': group_id,
             'group_name': group_name
         }
         await get_query_from_db(delete_group_query, None, params=params)
         return 1
+
 """
     Inserts a word into a group if both exist and their relationship does not already exist.
 
@@ -267,58 +234,6 @@ async def words_index_df():
     return list(query_df.itertuples(index=False, name=None))
 
 """
-    Retrieves all words in a group as a list.
-
-    Args:
-        group_id (int): The ID of the group.
-
-    Returns:
-        list: List of words in the group.
-"""
-async def get_group_words_as_list(group_id):
-    params = {'group_id': group_id}
-    words_list_df = await get_query_from_db(get_group_words, None, params=params)
-    return words_list_df['word_str'].to_list()
-
-"""
-    Retrieves an index of words in a group.
-
-    Args:
-        group_name (str): The name of the group.
-
-    Returns:
-        pd.DataFrame or None: DataFrame containing the index of words in the group, or None if not found.
-"""
-async def group_words_index_df(group_name):
-    search_params = {'group_name': group_name}
-    existing_group_df = await get_query_from_db(get_group_id, None, params=search_params)
-    if not existing_group_df.empty:
-        group_id = int(existing_group_df.iloc[0, 0])
-        group_words_list = await get_group_words_as_list(group_id)
-        index_df = await words_index_df()
-        if not index_df.empty and len(group_words_list) > 0:
-            group_index_df = index_df[index_df['word_str'].isin(group_words_list)]
-            return group_index_df
-    return None
-
-async def export_df_to_csv(df , report_name):
-    timestamp = datetime.now().strftime("%Y-%m-%d_%H-%M")
-    df.to_csv(f"{report_name}_{timestamp}.csv", index=False)
-
-"""
-    Retrieves songs that contain a specific expression.
-
-    Args:
-        expression_str (str): The expression to search for in songs.
-
-    Returns:
-        pd.DataFrame: A DataFrame containing songs that match the expression.
-"""
-async def songs_with_expression_df(expression_str):
-    params = {'expression': expression_str}
-    return await get_query_from_db(songs_with_expression, None, params=params)
-
-"""
     Retrieves paragraphs containing a specific word.
 
     Args:
@@ -332,26 +247,6 @@ async def word_shows_in_par_df(word):
     res = await get_query_from_db(word_shows_in_par, None, params=params)
     return list(res.itertuples(index=False, name=None))
 
-"""
-    Retrieves words based on their position in a song.
-
-    Args:
-        song_name (str, optional): The name of the song. Defaults to None.
-        par_num (int, optional): The paragraph number. Defaults to None.
-        line_num_in_par (int, optional): The line number in the paragraph. Defaults to None.
-        word_num_in_line (int, optional): The word's position in the line. Defaults to None.
-
-    Returns:
-        pd.DataFrame: A DataFrame containing words matching the specified position.
-"""
-async def words_by_place_df(song_name = None, par_num = None, line_num_in_par = None, word_num_in_line = None):
-    params = {
-        'song_name': song_name,
-        'par_num': par_num,
-        'line_num_in_par': line_num_in_par,
-        'word_num_in_line': word_num_in_line
-        }
-    return await get_query_from_db(words_by_place, None, params=params)
 
 """
     Retrieves word statistics for a specific song.
@@ -438,14 +333,13 @@ async def songs_statistics_df():
 async def get_rhymes_for_word_df(word_str):
     last_syllable = get_last_syllable(word_str)
     params = {'last_syllable': last_syllable}
-    print("last_syllable", last_syllable)
     query_df = await get_query_from_db(rhymes_for_word, None, params=params)
-    print(query_df)
     if query_df.empty:
         return []
     return list(query_df.itertuples(index=False, name=None))
 
 async def clear_db():
+    print("********************************************")
     await exec_procedure_from_db('DeleteAllData', None)
 
 # A utility function to fetch data from the database and return it as a list of tuples.
@@ -455,6 +349,10 @@ async def fetch_table_df(query):
     if query_df.empty:
         return []
     return list(query_df.itertuples(index=False, name=None))
+
+# Fetches a list of expressions with their IDs and names from the 'songs' table.
+async def fetch_expressions():
+    return await fetch_table_df("SELECT id, expression_str FROM expression")
 
 # Fetches a list of songs with their IDs and names from the 'songs' table.
 async def fetch_songs():
@@ -480,3 +378,14 @@ async def fetch_words_in_groups(group_name = None):
 # Fetches distinct words with their IDs and string representations from the 'words' table.
 async def fetch_words():
     return await fetch_table_df("SELECT distinct id, word_str FROM words")
+
+async def insert_new_expression(expression):
+    params = {'expression_str': expression}
+    await get_query_from_db(insert_expression, None, params=params)
+
+async def delete_expression(expression_str):
+    delete_query = "DELETE FROM expression WHERE expression_str = :expression_str"
+    print(delete_query)
+    params = {'expression_str': expression_str}
+    await get_query_from_db(delete_query, None, params=params)
+

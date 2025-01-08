@@ -1,91 +1,261 @@
 {% extends "base.html" %}
 
 {% block content %}
+<style>
+    html, body {
+      height: 100%;
+      margin: 0;
+      box-sizing: border-box;
+    }
+
+    *, *::before, *::after {
+      box-sizing: inherit;
+    }
+
+    .container {
+      display: flex;
+      flex-direction: column;
+      height: 100vh;
+      gap: 4px; /* רווח בין האלמנטים */
+    }
+
+
+    textarea {
+      width: 100%;
+      height: 100%;
+      resize: none;
+      overflow-y: auto;
+      border: 1px solid #314f68;
+      border-radius: 0.5rem;
+      background-color: #182834;
+      color: white;
+      padding: 1rem;
+    }
+
+.selected-song {
+  background-color: #2a3e50;
+  border-left: 4px solid #2094f3;
+}
+  .delete-icon {
+  background-color: transparent;
+  border-radius: 50%;
+  padding: 5px;
+}
+
+.delete-icon:hover {
+  background-color: #ff4d4d; /* אדום בהיר */
+  cursor: pointer;
+  transform: scale(1.1); /* להגדיל מעט */
+}
+.hidden {
+  display: none;
+}
+
+.loader {
+  border: 4px solid transparent;
+  border-radius: 50%;
+  border-top-color: #2094f3;
+  width: 40px;
+  height: 40px;
+  animation: spin 1s linear infinite;
+}
+
+
+@keyframes spin {
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
+}
+</style>
+
 
 <div class="relative flex size-full min-h-screen flex-col bg-[#101a23] dark group/design-root overflow-x-hidden" style='font-family: Inter, "Noto Sans", sans-serif;'>
     <div class="layout-container flex h-full grow flex-col">
         <div class="px-0 flex flex-1 py-5 gap-4">
             <!-- עמודה שמאלית עם שירים ומילים -->
-            <aside class="flex flex-row gap-2 p-4 rounded-xl shrink-0 border border-[#314f68]" style="width: 35%; max-height: calc(100vh - 50px); overflow-y: hidden;">
-                <!-- רשימת השירים -->
+            <aside class="flex flex-row gap-2 p-4 rounded-xl shrink-0 border border-[#314f68]" style="width: 25%; max-height: calc(100vh - 50px); overflow-y: hidden;">
+                <!-- רשימת ביטויים -->
                 <div class="flex-[1] overflow-hidden rounded-xl p-4 flex flex-col" style="max-height: 100%; overflow-y: auto;">
-                    <h2 class="text-white text-[22px] font-bold leading-tight tracking-[-0.015em] mb-2">Songs</h2>
+                    <h2 class="text-white text-[22px] font-bold leading-tight tracking-[-0.015em] mb-2">Expressions</h2>
+                    <div class="flex items-center gap-4">
+                        <input
+                            id="filter-exp"
+                            class="form-input rounded-xl text-white border border-[#314f68] bg-[#182834] h-12 placeholder:text-[#90b0cb] px-4 text-sm"
+                            value=""
+                            placeholder="Type to filter expressions..."
+                        />
+                        <button
+                            id="add-button"
+                            class="bg-[#2094f3] text-white rounded-xl px-4 py-2 text-sm font-bold leading-normal hover:bg-[#1a7ec8] transition-colors duration-200"
+                        >
+                            Add
+                        </button>
+                    </div>
+
+                    <div id="exp-container" 
+                    class="flex flex-col gap-2 p-3 rounded-lg overflow-y-auto grow"
+                    style="height: calc(100vh - 100px);">
+                    {% for id, expression_str in exp %}
+                 <div
+                   id="group-{{ id }}"
+                   data-song-id="{{ id }}"
+                   data-song-name="{{ expression_str }}"
+                   class="group-item flex items-center gap-4 p-4 rounded-lg cursor-pointer bg-[#101a23] hover:bg-[#2a3e50] transition relative"
+                   onclick="loadSongContent('{{ expression_str }}')"
+                 >
+                   <div class="text-white flex items-center justify-center rounded-lg bg-[#223749] size-12">
+                     <svg xmlns="http://www.w3.org/2000/svg" width="24px" height="24px" fill="currentColor" viewBox="0 0 256 256">
+                       <path
+                         d="M176,232a8,8,0,0,1-8,8H88a8,8,0,0,1,0-16h80A8,8,0,0,1,176,232Zm40-128a87.55,87.55,0,0,1-33.64,69.21A16.24,16.24,0,0,0,176,186v6a16,16,0,0,1-16,16H96a16,16,0,0,1-16-16v-6a16,16,0,0,0-6.23-12.66A87.59,87.59,0,0,1,40,104.49C39.74,56.83,78.26,17.14,125.88,16A88,88,0,0,1,216,104Zm-16,0a72,72,0,0,0-73.74-72c-39,.92-70.47,33.39-70.26,72.39a71.65,71.65,0,0,0,27.64,56.3A32,32,0,0,1,96,186v6h64v-6a32.15,32.15,0,0,1,12.47-25.35A71.65,71.65,0,0,0,200,104Zm-16.11-9.34a57.6,57.6,0,0,0-46.56-46.55,8,8,0,0,0-2.66,15.78c16.57,2.79,30.63,16.85,33.44,33.45A8,8,0,0,0,176,104a9,9,0,0,0,1.35-.11A8,8,0,0,0,183.89,94.66Z"
+                       ></path>
+                     </svg>
+                   </div>
+                   <div class="flex flex-col flex-grow">
+                     <p class="text-white text-base font-medium">{{ expression_str }}</p>
+                   </div>
+                   <div class="shrink-0">
+                     <div class="text-white flex size-7 items-center justify-center delete-icon transition-all duration-200" 
+                          data-icon="TrashSimple" 
+                          data-size="24px" 
+                          data-weight="regular"
+                          onclick="deleteExpression('{{ expression_str }}')"
+                          >
+                       <svg xmlns="http://www.w3.org/2000/svg" width="24px" height="24px" fill="currentColor" viewBox="0 0 256 256">
+                         <path
+                           d="M216,48H40a8,8,0,0,0,0,16h8V208a16,16,0,0,0,16,16H192a16,16,0,0,0,16-16V64h8a8,8,0,0,0,0-16ZM192,208H64V64H192ZM80,24a8,8,0,0,1,8-8h80a8,8,0,0,1,0,16H88A8,8,0,0,1,80,24Z"
+                         ></path>
+                       </svg>
+                     </div>
+                   </div>
+                   
+                 </div>
+                 {% endfor %}
+               </div>
+                </div>
+            
+            </aside>
+
+            <d<div class="flex gap-4 p-4 rounded-xl bg-[#101a23]" style="height: calc(100vh - 50px);">
+                <!-- צד ימין: פילטר וטבלה -->
+                <div class="flex flex-col gap-4 flex-1" style="max-height: 100%;">
+                    <!-- תיבת חיפוש -->
                     <input
-                        id="filter-songs"
-                        class="form-input w-full rounded-xl text-white border border-[#314f68] bg-[#182834] h-12 placeholder:text-[#90b0cb] px-4 text-sm mb-4"
+                        id="filter-songs2"
+                        class="form-input rounded-xl text-white border border-[#314f68] bg-[#182834] h-12 placeholder:text-[#90b0cb] px-4 text-sm"
                         value=""
-                        placeholder="Type to filter songs..."
+                        placeholder="Type to filter song..."
                     />
-                    <div id="song-list-container" class="flex-1 flex flex-col gap-2 overflow-y-auto" style="max-height: calc(100vh - 200px);">
-                        {% for id, song_name in songs %}
-                        <div class="flex items-center gap-4">
-                            <input
-                                type="radio"
-                                name="song-selection"
-                                id="radio-all"
-                                class="h-5 w-5 border-2 border-[#314f68] bg-transparent text-transparent checked:border-[#2094f3]"
-                                data-id="{{ id }}"
-                                data-name="{{ song_name }}"
-                                {% if loop.index == 1 %} checked {% endif %}
-                                onchange="loadSongContent('{{ song_name }}')"
-                            />
-                            <span class="text-white text-sm font-medium">{{ song_name }}</span>
-                        </div>
-                        {% endfor %}
+            
+                    <!-- טבלה -->
+                    <div class="flex-1 overflow-auto border border-[#314f68] rounded-xl p-4" style="max-height: 100%;">
+                        <table class="w-full border-collapse">
+                            <thead>
+                                <tr class="bg-[#182834]">
+                                    <th class="px-4 py-4 text-left text-white w-[200px] text-sm font-medium leading-normal sticky top-0 bg-[#182834] z-10">Select</th>
+                                    <th class="px-4 py-4 text-left text-white w-[200px] text-sm font-medium leading-normal sticky top-0 bg-[#182834] z-10">Song</th>
+                                    <th class="px-4 py-4 text-left text-white w-[200px] text-sm font-medium leading-normal sticky top-0 bg-[#182834] z-10">Paragraph number</th>
+                                    <th class="px-4 py-4 text-left text-white w-[200px] text-sm font-medium leading-normal sticky top-0 bg-[#182834] z-10">Line in Paragraph</th>
+                                    <th class="px-4 py-4 text-left text-white w-[200px] text-sm font-medium leading-normal sticky top-0 bg-[#182834] z-10">Word Num</th>
+                                </tr>
+                            </thead>
+                            <tbody id="exp-table-body">
+                                <!-- תוכן דינמי -->
+                            </tbody>
+                        </table>
                     </div>
                 </div>
             
-                <!-- רשימת המילים -->
-                <div class="flex-[1] overflow-hidden rounded-xl p-4 flex flex-col" style="max-height: 100%; overflow-y: auto;">
-                    <h2 class="text-white text-[22px] font-bold leading-tight tracking-[-0.015em] mb-2">Words</h2>
-                    <div class="flex items-center gap-2 mb-4">
-                        <input
-                            id="filter-words"
-                            class="form-input w-full rounded-xl text-white border border-[#314f68] bg-[#182834] h-12 placeholder:text-[#90b0cb] px-4 text-sm"
-                            value=""
-                            placeholder="Type to filter words..."
-                        />
-                        <button
-                            id="check-button"
-                            class="bg-[#2094f3] text-white rounded-xl px-4 py-2 text-sm font-bold leading-normal hover:bg-[#1a7ec8] transition-colors duration-200"
-                        >
-                            Check
-                        </button>
-                    </div>
-                    <div id="word-list-container" class="flex-1 flex flex-col gap-2 overflow-y-auto" style="max-height: calc(100vh - 200px);">
-                        {% for id, word_str in words %}
-                        <div class="flex items-center gap-4">
-                            <input
-                                type="radio"
-                                name="song-selection"
-                                id="radio-all"
-                                class="h-5 w-5 border-2 border-[#314f68] bg-transparent text-transparent checked:border-[#2094f3]"
-                                data-id="{{ id }}"
-                                data-name="{{ word_str }}"
-                                {% if loop.index == 1 %} checked {% endif %}
-                            />
-                            <span class="text-white text-sm font-medium">{{ word_str }}</span>
-                        </div>
-                        {% endfor %}
-                    </div>
-                </div>
-            </aside>
-                
-                <!-- תיבת טקסט להצגת תוכן הקובץ -->
-                <textarea
-                    id="song-content"
-                    class="w-full bg-[#182834] text-white rounded-lg p-4 text-sm border border-[#314f68]"
-                    style="height: calc(100vh - 50px); overflow-y: auto; background: #182834; border: 1px solid #314f68; border-radius: 0.5rem; padding: 1rem;"
-                    readonly
+                <!-- צד שמאל: תיבת טקסט -->
+                <div class="flex-1 border border-[#314f68] rounded-xl p-4 bg-[#182834]" style="max-height: 100%; overflow-y: auto;">
+                    <textarea
+                        id="song-content"
+                        class="w-full h-full bg-transparent text-white rounded-lg p-4 text-sm border-none resize-none"
+                        readonly
                     ></textarea>
-        </div>
+                </div>
+            </div>
+            
     </div>
 </div>
 <script>
-    async function loadSongContent(songName) {
-  const contentElement = document.getElementById("song-content");
 
-  try {
+async function deleteExpression(expressionStr) {
+  if (confirm(`Are you sure you want to delete the expression "${expressionStr}"?`)) {
+    fetch(`/delete-expression/${encodeURIComponent(expressionStr)}`, { method: 'DELETE' })
+      .then(response => {
+        if (response.ok) {
+          alert(`Expression "${expressionStr}" deleted successfully.`);
+          // מחיקת הביטוי מה-UI
+          const expressionElement = document.querySelector(`[data-song-name="${expressionStr}"]`);
+          if (expressionElement) {
+            expressionElement.remove();
+          }
+        } else {
+          alert(`Failed to delete the expression "${expressionStr}".`);
+        }
+      })
+      .catch(error => {
+        console.error('Error deleting expression:', error);
+        alert('An error occurred while trying to delete the expression.');
+      });
+  }
+}
+
+
+async function loadSongContent(expressionStr) {
+    try {
+        const response = await fetch(`/get-expression-shows?phrase=${encodeURIComponent(expressionStr)}&folder=static/songs`);
+        if (!response.ok) {
+            throw new Error("Failed to fetch data");
+        }
+        const data = await response.json();
+
+        // עדכון הטבלה עם התוצאות
+        const tableBody = document.getElementById("exp-table-body");
+        tableBody.innerHTML = ""; // ניקוי תוכן קודם
+
+        data.forEach(row => {
+            const tr = document.createElement("tr");
+            tr.innerHTML = `
+                <td class="px-4 py-2 text-center">
+                    <input 
+                        type="radio" 
+                        name="row-selection" 
+                        class="h-5 w-5 border-[#314f68] border-2 bg-transparent text-[#2094f3] checked:bg-[#2094f3]" 
+                        data-song="${row.song_name}" 
+                        data-paragraph="${row.par_num}" 
+                        data-line="${row.line_num_in_par}" 
+                        data-word="${row.word_num_in_line}" 
+                        onchange="handleRowSelection(event)"
+                    />
+                </td>
+                <td class="px-4 py-2 text-sm text-white">${row.song_name}</td>
+                <td class="px-4 py-2 text-sm text-white">${row.par_num}</td>
+                <td class="px-4 py-2 text-sm text-white">${row.line_num_in_par}</td>
+                <td class="px-4 py-2 text-sm text-white">${row.word_num_in_line}</td>
+            `;
+            tableBody.appendChild(tr);
+        });
+    } catch (error) {
+        console.error("Error loading song content:", error);
+        alert("Failed to load song content.");
+    }
+}
+
+// פונקציה שתטפל בבחירת שורה
+async function handleRowSelection(event) {
+    const contentElement = document.getElementById("song-content");
+
+    const selectedRadio = event.target; // הרדיו שנבחר
+    const songName = selectedRadio.dataset.song;
+    const paragraph = selectedRadio.dataset.paragraph;
+    const line = selectedRadio.dataset.line;
+    const word = selectedRadio.dataset.word;
+
+    try {
     const response = await fetch(`/static/songs/${songName}.txt`);
 
     if (response.ok) {
@@ -100,7 +270,93 @@
     console.error("Error fetching song content:", error);
     contentElement.textContent = "An error occurred while fetching the song content.";
   }
+
+    console.log("Selected row details:", { songName, paragraph, line, word });
+
+    // ניתן להוסיף לוגיקה נוספת לעיבוד הנתונים שנבחרו
 }
+
+document.getElementById("add-button").addEventListener("click", async () => {
+    const inputElement = document.getElementById("filter-songs");
+    const expression = inputElement.value.trim(); // קבלת הטקסט מהאינפוט
+
+    if (!expression) {
+        alert("Please enter a valid expression.");
+        return;
+    }
+
+    try {
+        // שליחת הטקסט לפונקציית הבקאנד
+        const response = await fetch(`/insert-expression`, {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+            },
+            body: JSON.stringify({ expression }),
+        });
+
+        if (!response.ok) {
+            throw new Error("Failed to insert expression.");
+        }
+
+        const result = await response.json();
+        alert(result.message || "Expression added successfully!");
+
+
+        // עדכון רשימת הביטויים
+        window.location.reload();
+
+        inputElement.value = ""; // ניקוי האינפוט לאחר ההוספה
+    } catch (error) {
+        console.error("Error adding expression:", error);
+        // alert("Failed to add expression.");
+    }
+});
+
+// מאזין לאירוע 'input' על תיבת החיפוש
+document.getElementById("filter-songs2").addEventListener("input", function (event) {
+    const filterText = event.target.value.toLowerCase().trim(); // טקסט הסינון מהאינפוט
+    const tableRows = document.querySelectorAll("#exp-table-body tr"); // כל השורות בטבלה
+
+    tableRows.forEach((row) => {
+        const songName = row.querySelector("td:nth-child(2)").textContent.toLowerCase(); // עמודת שם השיר (השנייה בטבלה)
+        if (songName.includes(filterText)) {
+            row.style.display = ""; // הצג את השורה אם השיר מתאים לסינון
+        } else {
+            row.style.display = "none"; // הסתר את השורה אם השיר לא מתאים לסינון
+        }
+    });
+});
+
+
+
+document.getElementById("filter-exp").addEventListener("input", function (event) {
+    const filterText = event.target.value.toLowerCase().trim(); // טקסט הסינון
+    const expressionItems = document.querySelectorAll("#exp-container .group-item"); // כל הביטויים ברשימה
+
+    expressionItems.forEach((item) => {
+        const expressionName = item.querySelector(".text-white.text-base").textContent.toLowerCase(); // שם הביטוי
+        if (expressionName.includes(filterText)) {
+            item.style.display = ""; // הצג את האלמנט אם הוא מתאים לסינון
+        } else {
+            item.style.display = "none"; // הסתר את האלמנט אם הוא לא מתאים לסינון
+        }
+    });
+});
+
+
+
+
+
+document.addEventListener("DOMContentLoaded", () => {
+    // קבלת הביטוי הראשון שנבחר ברשימה
+    const firstExpression = document.querySelector("#song-list-container input[type='radio']");
+    if (firstExpression) {
+        const expressionStr = firstExpression.dataset.name;
+        firstExpression.checked = true; // מסמן את הביטוי הראשון כברירת מחדל
+        loadSongContent(expressionStr); // טוען את התוכן של הביטוי הראשון
+    }
+});
 
 </script>
 {% endblock %}

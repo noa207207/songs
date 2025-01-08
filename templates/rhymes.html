@@ -76,11 +76,11 @@
             <div class="overflow-auto flex-1 p-4 ml-4 rounded-xl bg-[#101a23]" style="max-height: calc(100vh - 200px); width: 65%;">
                 <table class="w-full border-collapse">
                     <thead>
-                        <tr class="bg-[#182834]">
-                            <th class="px-4 py-4 text-left text-white w-[200px] text-sm font-medium leading-normal sticky top-0 bg-[#182834] z-10">Word</th>
+                        <tr class="bg-[#182834]">                   
                             <th class="px-4 py-4 text-left text-white w-[200px] text-sm font-medium leading-normal sticky top-0 bg-[#182834] z-10">Song</th>
                             <th class="px-4 py-4 text-left text-white w-[200px] text-sm font-medium leading-normal sticky top-0 bg-[#182834] z-10">Paragraph number</th>
                             <th class="px-4 py-4 text-left text-white w-[200px] text-sm font-medium leading-normal sticky top-0 bg-[#182834] z-10">Line in Paragraph</th>
+                            <th class="px-4 py-4 text-left text-white w-[200px] text-sm font-medium leading-normal sticky top-0 bg-[#182834] z-10">Word</th>
                         </tr>
                     </thead>
                     <tbody id="rhymes-table-body">
@@ -204,10 +204,10 @@ filterWords.addEventListener("input", (event) => {
             const tr = document.createElement("tr");
             tr.dataset.song = rhyme[1]; // שמירת שם השיר בנתון של השורה
             tr.innerHTML = `
-                <td class="px-4 py-2 text-sm text-white">${rhyme[0]}</td>
                 <td class="px-4 py-2 text-sm text-white">${rhyme[1]}</td>
                 <td class="px-4 py-2 text-sm text-white">${rhyme[2]}</td>
                 <td class="px-4 py-2 text-sm text-white">${rhyme[3]}</td>
+                <td class="px-4 py-2 text-sm text-white">${rhyme[0]}</td>
             `;
             rhymesTableBody.appendChild(tr);
         });
