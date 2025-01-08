@@ -6,6 +6,8 @@ from quart import Quart, request, jsonify, render_template
 from load_songs_files import load_songs_from_files_list, remove_song
 from functionality import *
 from expression_processing import get_expression_shows
+import shutil
+
 
 UPLOAD_FOLDER = "static/songs"
 app = Quart(__name__)
@@ -114,12 +116,29 @@ async def delete_group_route(group_name):
         return jsonify({"status": "error", "message": "An unexpected error occurred."}), 500
 
 @app.route("/clear-db", methods=["DELETE"])
+
 async def clear_db_route():
     try:
+        # קריאה לפונקציה לניקוי ה-DB
         await call_in_background(clear_db)
-        return jsonify({"message": "Database cleared successfully"}), 200
+
+        # מחיקת כל התוכן שבתיקיית static/songs
+        folder_path = os.path.join("static", "songs")
+        if os.path.exists(folder_path):
+            for filename in os.listdir(folder_path):
+                file_path = os.path.join(folder_path, filename)
+                try:
+                    if os.path.isfile(file_path) or os.path.islink(file_path):
+                        os.unlink(file_path)  # מחיקת קובץ או קישור
+                    elif os.path.isdir(file_path):
+                        shutil.rmtree(file_path)  # מחיקת תיקייה ותוכנה
+                except Exception as e:
+                    print(f"Failed to delete {file_path}. Reason: {e}")
+
+        return jsonify({"message": "Database and static/songs cleared successfully"}), 200
     except Exception as e:
         return jsonify({"error": str(e)}), 500
+
     
 @app.route('/get-expression-shows', methods=['GET'])
 def get_expression_shows_route():
