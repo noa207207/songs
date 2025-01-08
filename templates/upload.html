@@ -117,7 +117,8 @@
               data-song-id="{{ id }}"
               data-song-name="{{ song_name }}"
               class="group-item flex items-center gap-4 p-4 rounded-lg cursor-pointer bg-[#101a23] hover:bg-[#2a3e50] transition relative"
-              onclick="handleSongSelection('{{ song_name }}')"
+              onclick="handleSongSelection(decodeURIComponent(this.getAttribute('data-song-name')))"
+
             >
               <div class="text-white flex items-center justify-center rounded-lg bg-[#223749] size-12">
                 <svg xmlns="http://www.w3.org/2000/svg" width="24px" height="24px" fill="currentColor" viewBox="0 0 256 256">
