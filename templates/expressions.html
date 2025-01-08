@@ -277,9 +277,9 @@ async function handleRowSelection(event) {
 }
 
 document.getElementById("add-button").addEventListener("click", async () => {
-    const inputElement = document.getElementById("filter-songs");
-    const expression = inputElement.value.trim(); // קבלת הטקסט מהאינפוט
+    const inputElement = document.getElementById("filter-exp");
 
+    const expression = inputElement.value.trim(); // קבלת הטקסט מהאינפוט
     if (!expression) {
         alert("Please enter a valid expression.");
         return;

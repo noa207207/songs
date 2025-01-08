@@ -177,23 +177,12 @@
         updateWordList();
     });
 
-
-    selectAllCheckbox.addEventListener("change", (event) => {
-  const checkboxes = document.querySelectorAll(
-    "#song-list-container input[type='checkbox']:not(#select-all-checkbox)"
-  );
-
-  const isChecked = event.target.checked;
-
-  // עדכן את כל הצ'קבוקסים האחרים בהתאם למצב של 'All'
-  checkboxes.forEach((checkbox) => {
-    checkbox.checked = isChecked;
+    songListContainer.addEventListener("change", (event) => {
+    const target = event.target;
+    if (target.type === "checkbox") {
+      updateWordList();
+    }
   });
-
-  console.log(isChecked ? "All checkboxes selected" : "All checkboxes deselected");
-  updateWordList();
-
-});
 
 
   filterSongsInput.addEventListener("input", (event) => {
@@ -214,6 +203,7 @@
   
 
     function updateWordList() {
+
       const filterText = filterWordsInput.value.toLowerCase().trim();
         // שמור את המילה שנבחרה לפני הרינדור
         const previouslySelectedWord = selectedWord;
@@ -343,7 +333,7 @@
         }
     }
   
-    songCheckboxes.forEach(checkbox => checkbox.addEventListener("change", updateWordList));
+    // songCheckboxes.forEach(checkbox => checkbox.addEventListener("change", updateWordList));
     updateWordList();
 });
 

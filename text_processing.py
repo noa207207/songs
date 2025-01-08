@@ -18,14 +18,14 @@ FINAL_LETTERS = 3
 def get_last_syllable(word):
     if word.isdigit():
         word = num2words(abs(int(word))).split()[LAST_WORD_INDEX]
+        
+    nltk_result = get_last_syllable_nltk(word)
+    if nltk_result:
+        return nltk_result
 
     syllables = pronouncing.phones_for_word(word)
     if syllables:
         return syllables[0].split()[LAST_SYLLABLE_INDEX]
-
-    nltk_result = get_last_syllable_nltk(word)
-    if nltk_result:
-        return nltk_result
 
     if len(word) >= FINAL_LETTERS:
         return word[-FINAL_LETTERS:]

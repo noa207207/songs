@@ -29,7 +29,7 @@ Thumbs.db
 .idea/
 
 # Ignore other directories
-path/to/ignored_directory/
+static/songs/*
 another_directory_to_ignore/
 
 package.json

@@ -1,70 +1,9 @@
-insert_to_words_query = """
-    INSERT INTO words (word_str)
-    SELECT DISTINCT clean_word
-    FROM words_in_songs
-    WHERE words_in_songs.clean_word IS NOT NULL 
-      AND LEN(words_in_songs.clean_word) > 0
-      AND NOT EXISTS (
-          SELECT 1
-          FROM words
-          WHERE words.word_str = words_in_songs.clean_word
-      );
-    """
-
 update_word_id_query = """
     UPDATE words_in_songs
     SET word_id = words.id
     FROM words_in_songs JOIN words ON words_in_songs.clean_word = words.word_str
     WHERE words_in_songs.word_id IS NULL
     """
-
-words_of_some_songs_query = """
-    select songs.*, words_in_songs.*
-    from words_in_songs
-    join songs on songs.id = words_in_songs.song_id
-    where songs.song_name in('Sometimes You''re The Hammer, Sometimes You''re The Nail' , 'When You''re Gone')
-    order by songs.id, word_num
-"""
-
-words_pars_content = """
-with word_pars AS(
-    select distinct words_in_songs.clean_word, songs.song_name, paragraphs.par_num, wis.unclean_word , wis.word_num
-    FROM words_in_songs
-    join paragraphs on paragraphs.par_num = words_in_songs.par_num and paragraphs.song_id = words_in_songs.song_id
-    join songs on paragraphs.song_id = songs.id
-    JOIN words_in_songs wis on paragraphs.par_num = wis.par_num and paragraphs.song_id = wis.song_id
-    where words_in_songs.clean_word = 'great'
-)
-    select clean_word, song_name, par_num, STRING_AGG(unclean_word, '') WITHIN GROUP (ORDER BY word_num)
-    from word_pars
-    group by clean_word, song_name, par_num
-    order by clean_word, song_name, par_num
-"""
-
-words_in_par_in_song = """
-select words_in_songs.unclean_word, song_name, par_num, line_num_in_par
-from words_in_songs
-join songs on songs.id = words_in_songs.song_id
-WHERE song_name = 'A Looking in View' and par_num = 10
-order by word_num
-"""
-
-words_in_line_in_par_in_song = """
-select words_in_songs.unclean_word, song_name, par_num, line_num_in_par
-from words_in_songs
-join songs on songs.id = words_in_songs.song_id
-WHERE song_name = 'A Looking in View' and par_num = 10 and line_num_in_par = 2
-order by word_num
-"""
-
-lines_pars_statistics = """
-select song_name, par_num, line_num_in_par, COUNT(word_id) AS TOTAL_WORDS , SUM(chars_count) AS CHARS_IN_PARAGRAPH , 
-    ROUND(CAST(SUM(chars_count) AS float) / COUNT(word_id) , 2)  AS AVERAGE_CHARS_PER_WORD
-from words_in_songs wis
-join songs on songs.id = wis.song_id
-group by song_name, par_num, line_num_in_par
-order by song_name, par_num, line_num_in_par
-"""
 
 search_details = """
 select song_details.Id, songs.song_name, song_details.[Poet’s_Name], song_details.[Composer’s_Name], song_details.Creation_Year,song_details.[Performance_Video_Link] ,song_details.[Performer’s_Name]
@@ -119,7 +58,7 @@ SELECT
     w.word_str 
 FROM words_in_group wig 
 JOIN groups ON groups.id = wig.group_id
-LEFT JOIN words w ON wig.word_id = w.id
+JOIN words w ON wig.word_id = w.id
 WHERE (:group_name IS NULL OR groups.group_name = :group_name)
 """
 
@@ -129,31 +68,6 @@ SET
     group_name = :new_group_name,
     group_purpose = :new_group_purpose
 WHERE group_name = :old_group_name
-"""
-
-songs_with_expression = """
-WITH SONGS_WITH_EXPRESSION AS(
-    SELECT 
-        song_name,
-        STRING_AGG(clean_word, ' ') WITHIN GROUP (ORDER BY word_num) AS clean_words
-    from words_in_songs wis
-    join songs on songs.id = wis.song_id 
-    where clean_word <> '' 
-    GROUP BY song_name
-)
-SELECT DISTINCT song_name
-FROM SONGS_WITH_EXPRESSION
-WHERE (:expression IS NULL OR clean_words LIKE '%' + :expression + '%')
-"""
-
-songs_words = """
-SELECT DISTINCT 
-    songs.song_name, 
-    STRING_AGG(wis.unclean_word, '') WITHIN GROUP (ORDER BY wis.word_num) AS aggregated_words
-FROM words_in_songs wis
-JOIN songs ON wis.song_id = songs.id
-GROUP BY songs.song_name
-ORDER BY songs.song_name
 """
 
 remove_details_line = """
@@ -192,25 +106,6 @@ from words_in_songs
 join songs on songs.id = words_in_songs.song_id
 WHERE clean_word <> ''
 order by clean_word, song_name, par_num, line_num_in_par, word_num_in_line
-"""
-
-get_group_words = """
-    SELECT DISTINCT word_str
-    FROM words_in_group
-    JOIN words on words.id = words_in_group.word_id
-    WHERE group_id = :group_id
-"""
-
-words_by_place = """
-select words_in_songs.clean_word, song_name, par_num, line_num_in_par, word_num_in_line, word_num
-from words_in_songs
-join songs on songs.id = words_in_songs.song_id
-WHERE 
-    (:song_name IS NULL OR songs.song_name LIKE '%' + :song_name + '%') AND
-    (:par_num IS NULL OR par_num = :par_num) AND
-    (:line_num_in_par IS NULL OR line_num_in_par = :line_num_in_par) AND
-    (:word_num_in_line IS NULL OR word_num_in_line = :word_num_in_line)
-order by song_name,  word_num
 """
 
 words_statistics_in_song = """
@@ -304,13 +199,6 @@ WHERE
 ORDER BY song_name, par_num, line_num_in_par
 """
 
-last_in_line_words =  """
-    select distinct clean_word
-    from words_in_songs
-    where is_last_in_line = 1
-    order by clean_word
-"""
-
 insert_expression =  """
     IF NOT EXISTS (
         SELECT expression_str
@@ -321,5 +209,28 @@ insert_expression =  """
     select :expression_str
 """
 
+update_words_query = """ 
+    INSERT INTO words (word_str)
+    SELECT DISTINCT clean_word
+    FROM words_in_songs
+    WHERE 
+        words_in_songs.clean_word IS NOT NULL 
+        AND LEN(words_in_songs.clean_word) > 0
+        AND NOT EXISTS (
+            SELECT 1
+            FROM words
+            WHERE words.word_str = words_in_songs.clean_word
+        );
+"""
 
+is_exist_song_query = "SELECT COUNT(1) FROM songs WHERE song_name = :song_name"
 
+expression_table_query = "SELECT * FROM expression"
+
+songs_table_query = "SELECT * FROM songs"
+
+groups_table_query = "SELECT * FROM groups"
+
+words_table_query = "SELECT * FROM words"
+
+words_in_songs_main_columns_table_query = "SELECT id, word_id, clean_word, song_id FROM words_in_songs"
