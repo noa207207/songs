@@ -3,19 +3,104 @@
 {% block title %}Songs Library{% endblock %}
 
 {% block content %}
+
+<style>
+    html, body {
+      height: 100%;
+      margin: 0;
+      box-sizing: border-box;
+    }
+
+    *, *::before, *::after {
+      box-sizing: inherit;
+    }
+
+    .container {
+      display: flex;
+      flex-direction: column;
+      height: 100vh;
+      gap: 4px; /* רווח בין האלמנטים */
+    }
+
+
+    textarea {
+      width: 100%;
+      height: 100%;
+      resize: none;
+      overflow-y: auto;
+      border: 1px solid #314f68;
+      border-radius: 0.5rem;
+      background-color: #182834;
+      color: white;
+      padding: 1rem;
+    }
+
+.selected-song {
+  background-color: #2a3e50;
+  border-left: 4px solid #2094f3;
+}
+  .delete-icon {
+  background-color: transparent;
+  border-radius: 50%;
+  padding: 5px;
+}
+
+.delete-icon:hover {
+  background-color: #ff4d4d; /* אדום בהיר */
+  cursor: pointer;
+  transform: scale(1.1); /* להגדיל מעט */
+}
+.hidden {
+  display: none;
+}
+
+.loader {
+  border: 4px solid transparent;
+  border-radius: 50%;
+  border-top-color: #2094f3;
+  width: 40px;
+  height: 40px;
+  animation: spin 1s linear infinite;
+}
+
+
+@keyframes spin {
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
+}
+
+</style>
 <div class="flex h-full">
+  <div id="loadingOverlay" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+    <div class="loader border-t-4 border-b-4 border-white rounded-full w-12 h-12 animate-spin"></div>
+  </div>
+  
   <!-- צד שמאל: רשימת שירים -->
   <div class="w-1/4 bg-[#101a23] overflow-hidden p-4 flex flex-col" style="max-height: calc(100vh - 40px);">
     <h2 class="text-white text-[22px] font-bold leading-tight tracking-[-0.015em] mb-4">Songs</h2>
     
     <!-- כפתור Browse New Songs -->
-    <button
-      id="browse-new-songs"
-      class="bg-[#2094f3] text-white rounded-lg px-4 py-2 mb-4 text-sm font-bold leading-normal hover:bg-[#1a7ec8] transition-colors duration-200"
-      onclick="document.getElementById('fileInput').click();"
-    >
-      Browse New Songs
-    </button>
+    <div class="flex items-center gap-4">
+      <button
+        id="browse-new-songs"
+        class="bg-[#2094f3] text-white rounded-lg px-4 py-2 text-sm font-bold leading-normal hover:bg-[#1a7ec8] transition-colors duration-200"
+        onclick="document.getElementById('fileInput').click();"
+      >
+        Browse New Songs
+      </button>
+      <button
+        id="reset"
+        class="bg-[#2094f3] text-white rounded-lg px-4 py-2 text-sm font-bold leading-normal hover:bg-[#1a7ec8] transition-colors duration-200"
+        onclick=""
+      >
+        Reset
+      </button>
+    </div>
+    
     <input 
           type="file" 
           id="fileInput" 
@@ -23,41 +108,55 @@
           multiple
           onchange="handleFileSelect(event)" 
         />
-    
-    <div class="flex-1 overflow-y-auto flex flex-col gap-4">
-      {% for id, song_name in songs %}
-      <div class="flex items-center gap-4 bg-[#101a23] px-4 min-h-[72px] py-2 justify-between">
-        <div class="flex items-center gap-4">
-          <div
-            class="bg-center bg-no-repeat aspect-square bg-cover rounded-lg size-14"
-            style='background-image: url("https://cdn.usegalileo.ai/sdxl10/fa79df96-3fce-4cfb-bacb-d49e2ab64187.png");'
-          ></div>
-          <div class="flex flex-col justify-center">
-            <p class="text-white text-base font-medium leading-normal line-clamp-1">{{ song_name }}</p>
-            <p class="text-[#90b0cb] text-sm font-normal leading-normal line-clamp-2">{{ id }}</p>
+        <div id="songs-container" 
+               class="flex flex-col gap-2 p-3 rounded-lg overflow-y-auto grow"
+               style="height: calc(100vh - 100px);">
+            {% for id, song_name in songs %}
+            <div
+              id="group-{{ id }}"
+              data-song-id="{{ id }}"
+              data-song-name="{{ song_name }}"
+              class="group-item flex items-center gap-4 p-4 rounded-lg cursor-pointer bg-[#101a23] hover:bg-[#2a3e50] transition relative"
+              onclick="handleSongSelection('{{ song_name }}')"
+            >
+              <div class="text-white flex items-center justify-center rounded-lg bg-[#223749] size-12">
+                <svg xmlns="http://www.w3.org/2000/svg" width="24px" height="24px" fill="currentColor" viewBox="0 0 256 256">
+                  <path
+                    d="M176,232a8,8,0,0,1-8,8H88a8,8,0,0,1,0-16h80A8,8,0,0,1,176,232Zm40-128a87.55,87.55,0,0,1-33.64,69.21A16.24,16.24,0,0,0,176,186v6a16,16,0,0,1-16,16H96a16,16,0,0,1-16-16v-6a16,16,0,0,0-6.23-12.66A87.59,87.59,0,0,1,40,104.49C39.74,56.83,78.26,17.14,125.88,16A88,88,0,0,1,216,104Zm-16,0a72,72,0,0,0-73.74-72c-39,.92-70.47,33.39-70.26,72.39a71.65,71.65,0,0,0,27.64,56.3A32,32,0,0,1,96,186v6h64v-6a32.15,32.15,0,0,1,12.47-25.35A71.65,71.65,0,0,0,200,104Zm-16.11-9.34a57.6,57.6,0,0,0-46.56-46.55,8,8,0,0,0-2.66,15.78c16.57,2.79,30.63,16.85,33.44,33.45A8,8,0,0,0,176,104a9,9,0,0,0,1.35-.11A8,8,0,0,0,183.89,94.66Z"
+                  ></path>
+                </svg>
+              </div>
+              <div class="flex flex-col flex-grow">
+                <p class="text-white text-base font-medium">{{ song_name }}</p>
+                <p class="text-[#90b0cb] text-sm">{{ id }}</p>
+              </div>
+              <div class="shrink-0">
+                <div class="text-white flex size-7 items-center justify-center delete-icon transition-all duration-200" 
+                     data-icon="TrashSimple" 
+                     data-size="24px" 
+                     data-weight="regular"
+                     onclick="deleteSong('{{ song_name }}');">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="24px" height="24px" fill="currentColor" viewBox="0 0 256 256">
+                    <path
+                      d="M216,48H40a8,8,0,0,0,0,16h8V208a16,16,0,0,0,16,16H192a16,16,0,0,0,16-16V64h8a8,8,0,0,0,0-16ZM192,208H64V64H192ZM80,24a8,8,0,0,1,8-8h80a8,8,0,0,1,0,16H88A8,8,0,0,1,80,24Z"
+                    ></path>
+                  </svg>
+                </div>
+              </div>
+              
+            </div>
+            {% endfor %}
           </div>
-        </div>
-        <!-- רדיו לשיר -->
-        <input
-          type="radio"
-          name="song-selection"
-          class="h-5 w-5 border-[#314f68] border-2 bg-transparent text-[#2094f3] checked:bg-[#2094f3] checked:border-[#2094f3]"
-          data-id="{{ id }}"
-          data-name="{{ song_name }}"
-          onchange=handleSongSelection(event)
-        />
-      </div>
-      {% endfor %}
-    </div>
+        
   </div>
   
 
   <!-- צד ימין: טופס העלאה -->
-  <div class="w-2/3 bg-[#101a23] p-4">
+  <div class="w-2/3 bg-[#101a23] p-4 flex flex-col h-screen">
     <h2 class="text-white text-[18px] font-bold leading-tight tracking-[-0.015em] mb-4">Song Details</h2>
     
     <!-- רשת פרטי השיר -->
-    <div class="grid grid-cols-3 gap-3">
+    <div class="grid grid-cols-3 gap-3 mb-4">
       <input
         placeholder="Poet's Name"
         class="form-input w-full rounded-lg bg-[#223749] text-white h-10 px-3 placeholder:text-[#90b0cb]"
@@ -98,21 +197,44 @@
       </div>
     </div>
 
-    <table class="w-full border-collapse mt-4">
-      <thead>
+    <div class="flex-1 overflow-y-auto">
+      <table class="w-full border-collapse">
+        <thead>
           <tr class="bg-[#182834]">
-              <th class="px-4 py-4 text-left text-white w-[400px] text-sm font-medium leading-normal sticky top-0 bg-[#182834] z-10">Song Name</th>  
-              <th class="px-4 py-4 text-left text-white w-[400px] text-sm font-medium leading-normal sticky top-0 bg-[#182834] z-10">Poet's Name</th>
-              <th class="px-4 py-4 text-left text-white w-[400px] text-sm font-medium leading-normal sticky top-0 bg-[#182834] z-10">Composer's Name</th>
-              <th class="px-4 py-4 text-left text-white w-[400px] text-sm font-medium leading-normal sticky top-0 bg-[#182834] z-10">Year</th>
-              <th class="px-4 py-4 text-left text-white w-[400px] text-sm font-medium leading-normal sticky top-0 bg-[#182834] z-10">Performance Video Link</th>
-              <th class="px-4 py-4 text-left text-white w-[400px] text-sm font-medium leading-normal sticky top-0 bg-[#182834] z-10">Performer's Name</th>
+            <th class="px-4 py-4 text-left text-white w-[50px] text-sm font-medium leading-normal sticky top-0 bg-[#182834] z-10">Select</th>
+            <th class="px-4 py-4 text-left text-white w-[400px] text-sm font-medium leading-normal sticky top-0 bg-[#182834] z-10">Song Name</th>
+            <th class="px-4 py-4 text-left text-white w-[400px] text-sm font-medium leading-normal sticky top-0 bg-[#182834] z-10">Poet's Name</th>
+            <th class="px-4 py-4 text-left text-white w-[400px] text-sm font-medium leading-normal sticky top-0 bg-[#182834] z-10">Composer's Name</th>
+            <th class="px-4 py-4 text-left text-white w-[400px] text-sm font-medium leading-normal sticky top-0 bg-[#182834] z-10">Year</th>
+            <th class="px-4 py-4 text-left text-white w-[400px] text-sm font-medium leading-normal sticky top-0 bg-[#182834] z-10">Performance Video Link</th>
+            <th class="px-4 py-4 text-left text-white w-[400px] text-sm font-medium leading-normal sticky top-0 bg-[#182834] z-10">Performer's Name</th>
+            <th class="px-4 py-4 text-left text-white w-[50px] text-sm font-medium leading-normal sticky top-0 bg-[#182834] z-10">Delete</th>
           </tr>
-      </thead>
-      <tbody id="details-table-body">
+        </thead>
+        <tbody id="details-table-body">
           <!-- תוכן דינמי -->
-      </tbody>
-  </table>
+        </tbody>
+      </table>
+    </div>
+
+    
+      
+    
+      <!-- חלק תחתון: טקסטאריה -->
+      <div class="flex-1 overflow-y-auto">
+        <textarea
+          id="song-content"
+          class="w-full bg-[#182834] text-white rounded-lg text-sm border border-[#314f68] p-4"
+          style="resize: none; height: 100%; overflow-y: auto;"
+          readonly
+        ></textarea>
+      </div>
+    </div>
+    
+    
+    
+    
+    
   </div>
 
   
@@ -131,24 +253,59 @@
 const detailsTableBody = document.getElementById("details-table-body");
 const details_data = JSON.parse(document.getElementById("details-data").textContent);
 
-function handleSongSelection(event) {
-  const selectedRadio = event.target; // הרדיו שנבחר
-  const songName = selectedRadio.getAttribute("data-name"); // שליפת שם השיר
+let selectedSongName = null;
+
+document.getElementById("reset").addEventListener("click", async () => {
+  if (confirm("Are you sure you want to reset all data?")) {
+    try {
+      const response = await fetch("/clear-db", { method: "DELETE" });
+      if (response.ok) {
+        alert("All data has been reset successfully.");
+        window.location.reload(); // רענון המסך
+      } else {
+        throw new Error("Failed to reset data.");
+      }
+    } catch (error) {
+      alert(error)
+      console.error("Error resetting data:", error);
+      alert("An error occurred while trying to reset data.");
+    }
+  }
+});
+
+
+function handleSongSelection(songName) {
   if (songName) {
+    console.log(`Selected song: ${songName}`);
+
+    selectedSongName = songName;
+
+    // הסרת מחלקת הבחירה מכל השורות
+    document.querySelectorAll(".selected-song").forEach((el) => el.classList.remove("selected-song"));
+
+    // מציאת השורה שנבחרה והוספת מחלקת הבחירה
+    const selectedElement = document.querySelector(`[onclick="handleSongSelection('${songName}')"]`);
+    if (selectedElement) {
+      selectedElement.classList.add("selected-song");
+    }
+
     renderDetailsTable(songName); // קריאה לפונקציה עם שם השיר
   } else {
     console.error("No song name found!");
   }
+
+  loadSongContent(songName)
 }
+
 
 async function saveDetails() {
     // קבלת השיר שנבחר
-    const selectedRadio = document.querySelector('input[name="song-selection"]:checked');
-    if (!selectedRadio) {
+    if (!selectedSongName) {
         alert("Please select a song first.");
         return;
     }
-    const songName = selectedRadio.getAttribute("data-name");
+    // const songName = selectedRadio.getAttribute("data-name");
+    const songName = selectedSongName;
 
     // קבלת הערכים מהשדות
     const poetName = document.querySelector('input[placeholder="Poet\'s Name"]').value;
@@ -184,7 +341,33 @@ async function saveDetails() {
         console.error("Error saving song details:", error);
         alert("An error occurred while saving the details.");
     }
+
+    window.location.reload();
+
 }
+
+function deleteSong(songName) {
+  if (confirm(`Are you sure you want to delete the song "${songName}"?`)) {
+    fetch(`/delete-song/${songName}`, { method: 'DELETE' })
+      .then(response => {
+        if (response.ok) {
+          // הסרת השיר מה-UI
+          const songElement = document.querySelector(`[data-song-name="${songName}"]`);
+          if (songElement) {
+            songElement.remove();
+          }
+          alert(`Song "${songName}" deleted successfully.`);
+        } else {
+          alert(`Failed to delete song "${songName}".`);
+        }
+      })
+      .catch(error => {
+        console.error('Error deleting song:', error);
+        alert('An error occurred while trying to delete the song.');
+      });
+  }
+}
+
 
 function searchDetails() {
     const radioButtons = document.querySelectorAll('input[type="radio"][name="song-selection"]');
@@ -218,17 +401,53 @@ function searchDetails() {
             // צור שורה חדשה
             const tr = document.createElement("tr");
             tr.innerHTML = `
-                <td class="px-4 py-2 text-sm text-white">${row[1]}</td>
-                <td class="px-4 py-2 text-sm text-white">${row[2]}</td>
-                <td class="px-4 py-2 text-sm text-white">${row[3]}</td>
-                <td class="px-4 py-2 text-sm text-white">${row[4]}</td>
-                <td class="px-4 py-2 text-sm text-white">${row[5]}</td>
-                <td class="px-4 py-2 text-sm text-white">${row[6]}</td>
-            `;
+            <td class="px-4 py-2 text-sm text-white">
+              <input type="radio" onchange="loadSongContent('${row[1]}')" name="row-selection" class="h-5 w-5 border-[#314f68] border-2 bg-transparent text-[#2094f3] checked:bg-[#2094f3]" />
+            </td>
+            <td class="px-4 py-2 text-sm text-white">${row[1]}</td>    
+            <td class="px-4 py-2 text-sm text-white">${row[2]}</td>
+            <td class="px-4 py-2 text-sm text-white">${row[3]}</td>
+            <td class="px-4 py-2 text-sm text-white">${row[4]}</td>
+            <td class="px-4 py-2 text-sm text-white">${row[5]}</td>
+            <td class="px-4 py-2 text-sm text-white">${row[6]}</td>
+            <td class="px-4 py-2 text-sm text-white">
+              <div class="shrink-0">
+                <div class="text-white flex size-7 items-center justify-center delete-icon transition-all duration-200"
+                    onclick="deleteRow('${row[0]}')">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="24px" height="24px" fill="currentColor" viewBox="0 0 256 256">
+                    <path
+                      d="M216,48H40a8,8,0,0,0,0,16h8V208a16,16,0,0,0,16,16H192a16,16,0,0,0,16-16V64h8a8,8,0,0,0,0-16ZM192,208H64V64H192ZM80,24a8,8,0,0,1,8-8h80a8,8,0,0,1,0,16H88A8,8,0,0,1,80,24Z"
+                    ></path>
+                  </svg>
+                </div>
+              </div>
+            </td>
+                    `;
             detailsTableBody.appendChild(tr);
         }
     });
 }
+
+async function loadSongContent(songName) {
+  const contentElement = document.getElementById("song-content");
+
+  try {
+    const response = await fetch(`/static/songs/${songName}.txt`);
+
+    if (response.ok) {
+      const content = await response.text();
+      contentElement.innerHTML = `${content}`;
+    } else if (response.status === 404) {
+      contentElement.textContent = "Song file not found.";
+    } else {
+      contentElement.textContent = "Error loading song content.";
+    }
+  } catch (error) {
+    console.error("Error fetching song content:", error);
+    contentElement.textContent = "An error occurred while fetching the song content.";
+  }
+}
+
 
 
 
@@ -237,21 +456,61 @@ function renderDetailsTable(song_name) {
 
     detailsTableBody.innerHTML = ""; // נקה את הטבלה
     details_data.forEach(row => {
-
         if (row[1] === song_name) { // בדוק אם הערך בשדה row[1] שווה ל-song_name
             const tr = document.createElement("tr");
             tr.innerHTML = `
-                <td class="px-4 py-2 text-sm text-white">${row[1]}</td>    
-                <td class="px-4 py-2 text-sm text-white">${row[2]}</td>
-                <td class="px-4 py-2 text-sm text-white">${row[3]}</td>
-                <td class="px-4 py-2 text-sm text-white">${row[4]}</td>
-                <td class="px-4 py-2 text-sm text-white">${row[5]}</td>
-                <td class="px-4 py-2 text-sm text-white">${row[6]}</td>
-            `;
+            <td class="px-4 py-2 text-sm text-white">
+              <input type="radio" onchange="loadSongContent('${row[1]}')" name="row-selection" class="h-5 w-5 border-[#314f68] border-2 bg-transparent text-[#2094f3] checked:bg-[#2094f3]" />
+            </td>
+            <td class="px-4 py-2 text-sm text-white">${row[1]}</td>    
+            <td class="px-4 py-2 text-sm text-white">${row[2]}</td>
+            <td class="px-4 py-2 text-sm text-white">${row[3]}</td>
+            <td class="px-4 py-2 text-sm text-white">${row[4]}</td>
+            <td class="px-4 py-2 text-sm text-white">${row[5]}</td>
+            <td class="px-4 py-2 text-sm text-white">${row[6]}</td>
+            <td class="px-4 py-2 text-sm text-white">
+              <div class="shrink-0">
+                <div class="text-white flex size-7 items-center justify-center delete-icon transition-all duration-200"
+                    onclick="deleteRow('${row[0]}')">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="24px" height="24px" fill="currentColor" viewBox="0 0 256 256">
+                    <path
+                      d="M216,48H40a8,8,0,0,0,0,16h8V208a16,16,0,0,0,16,16H192a16,16,0,0,0,16-16V64h8a8,8,0,0,0,0-16ZM192,208H64V64H192ZM80,24a8,8,0,0,1,8-8h80a8,8,0,0,1,0,16H88A8,8,0,0,1,80,24Z"
+                    ></path>
+                  </svg>
+                </div>
+              </div>
+            </td>
+                    `;
             detailsTableBody.appendChild(tr);
         }
     });
 }
+
+async function deleteRow(detailsId) {
+  if (!confirm(`Are you sure you want to delete the song detail with ID ${detailsId}?`)) {
+    return;
+  }
+
+  try {
+    const response = await fetch(`/delete-song-details/${detailsId}`, {
+      method: "DELETE",
+    });
+
+    if (response.ok) {
+      document.querySelector(`[data-id="${detailsId}"]`).remove();
+      alert(`Song detail with ID ${detailsId} deleted successfully.`);
+    } else {
+      const error = await response.json();
+      alert(`Failed to delete song detail: ${error.message}`);
+    }
+  } catch (err) {
+    console.error("Error deleting song detail:", err);
+    // alert("An error occurred while deleting the song detail.");
+  }
+
+  window.location.reload();
+}
+
 
 
 const select = document.getElementById("creationYear");
@@ -286,13 +545,17 @@ for (let year = currentYear; year >= 1960; year--) {
     }
 
     processFiles();
-  }
+}
 
-  async function processFiles() {
+async function processFiles() {
     if (!selectedFiles || selectedFiles.length === 0) {
         alert("Please select one or more files before saving.");
         return;
     }
+
+    // הצגת המסך הנעול
+    const loadingOverlay = document.getElementById("loadingOverlay");
+    loadingOverlay.classList.remove("hidden");
 
     const formData = new FormData();
     for (const file of selectedFiles) {
@@ -308,66 +571,19 @@ for (let year = currentYear; year >= 1960; year--) {
         if (response.ok) {
             const result = await response.json();
             alert(`Files processed: ${result.message}`);
-            // await refreshSongsList();
         } else {
             throw new Error("Failed to upload files.");
         }
     } catch (error) {
         console.error(error);
         alert("Error uploading files.");
+    } finally {
+        // הסרת המסך הנעול
+        loadingOverlay.classList.add("hidden");
+        window.location.reload();
     }
 }
 
-async function refreshSongsList() {
-  try {
-    const response = await fetch("/songs-list"); // נתיב לקבלת רשימת השירים
-    if (response.ok) {
-      const songs = await response.json();
-      alert(songs)
-      updateSongsUI(songs);
-    } else {
-      throw new Error("Failed to fetch songs.");
-    }
-  } catch (error) {
-    console.error("Error fetching songs:", error);
-    alert("Failed to refresh songs list.");
-  }
-}
-
-function updateSongsUI(songs) {
-  const songsContainer = document.querySelector('.flex-1.overflow-y-auto');
-  songsContainer.innerHTML = ""; // נקה את הרשימה הקיימת
-
-  songs.forEach(song => {
-  const id = song[0];
-  const songName = song[1];
-
-  const songElement = document.createElement("div");
-  songElement.className = "flex items-center gap-4 bg-[#101a23] px-4 min-h-[72px] py-2 justify-between";
-  songElement.innerHTML = `
-    <div class="flex items-center gap-4">
-      <div
-        class="bg-center bg-no-repeat aspect-square bg-cover rounded-lg size-14"
-        style='background-image: url("https://cdn.usegalileo.ai/sdxl10/fa79df96-3fce-4cfb-bacb-d49e2ab64187.png");'
-      ></div>
-      <div class="flex flex-col justify-center">
-        <p class="text-white text-base font-medium leading-normal line-clamp-1">${songName}</p>
-        <p class="text-[#90b0cb] text-sm font-normal leading-normal line-clamp-2">${id}</p>
-      </div>
-    </div>
-    <!-- רדיו לשיר -->
-    <input
-      type="radio"
-      name="song-selection"
-      class="h-5 w-5 border-[#314f68] border-2 bg-transparent text-[#2094f3] checked:bg-[#2094f3] checked:border-[#2094f3]"
-      data-id="${id}"
-      data-name="${songName}"
-    />
-  `;
-  songsContainer.appendChild(songElement);
-});
-
-}
 
 
   function clearFields() {

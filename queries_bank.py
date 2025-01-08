@@ -67,7 +67,7 @@ order by song_name, par_num, line_num_in_par
 """
 
 search_details = """
-select song_details.Id, songs.song_name, song_details.[Poet’s_Name], song_details.[Composer’s_Name], song_details.Creation_Year, song_details.[Performer’s_Name]
+select song_details.Id, songs.song_name, song_details.[Poet’s_Name], song_details.[Composer’s_Name], song_details.Creation_Year,song_details.[Performance_Video_Link] ,song_details.[Performer’s_Name]
 from song_details
 join songs on song_details.song_id = songs.id
 WHERE 
@@ -214,12 +214,12 @@ order by song_name,  word_num
 """
 
 words_statistics_in_song = """
-select song_name, clean_word WORD, COUNT(DISTINCT wis.id) TOTAL_SHOWS,
+select song_name, clean_word WORD, chars_count, COUNT(DISTINCT wis.id) TOTAL_SHOWS,
     SUM(COUNT(wis.id)) OVER (PARTITION BY song_name) AS TOTAL_WORDS_IN_SONG,
-    ROUND((CAST(COUNT(DISTINCT wis.id) AS FLOAT) / SUM(COUNT(wis.id)) OVER (PARTITION BY song_name)) , 2) AS Frequency
+    ROUND((CAST(COUNT(DISTINCT wis.id) AS FLOAT) / SUM(COUNT(wis.id)) OVER (PARTITION BY song_name)) , 3) AS Frequency
 from words_in_songs wis
 join songs on songs.id = wis.song_id
-group by song_name, clean_word
+group by song_name, clean_word, chars_count
 order by song_name, TOTAL_SHOWS DESC
 """
 
@@ -233,12 +233,13 @@ GROUP BY clean_word;
 
 SELECT 
     clean_word AS WORD,
+    chars_count,
     COUNT(wis.id) AS TOTAL_WORD_SHOWS,
     @TOTAL_WORDS_ALL_SONGS AS TOTAL_WORDS_ALL_SONGS,
     ROUND(CAST(COUNT(wis.id) AS FLOAT) / @TOTAL_WORDS_ALL_SONGS, 3) AS FREQUENCY
 FROM words_in_songs wis
 JOIN songs ON songs.id = wis.song_id
-GROUP BY clean_word
+GROUP BY clean_word, chars_count
 ORDER BY TOTAL_WORD_SHOWS DESC;
 """
 
@@ -302,3 +303,23 @@ WHERE
     is_last_in_line = 1
 ORDER BY song_name, par_num, line_num_in_par
 """
+
+last_in_line_words =  """
+    select distinct clean_word
+    from words_in_songs
+    where is_last_in_line = 1
+    order by clean_word
+"""
+
+insert_expression =  """
+    IF NOT EXISTS (
+        SELECT expression_str
+        FROM expression
+        WHERE expression_str = :expression_str
+    )
+    insert into expression
+    select :expression_str
+"""
+
+
+

@@ -113,7 +113,8 @@
                                 <thead>
                                     <tr class="bg-[#182834]">
                                         <th class="px-4 py-4 text-left text-white w-[400px] text-sm font-medium leading-normal sticky top-0 bg-[#182834] z-10">Word</th>
-                                        <th class="px-4 py-4 text-left text-white w-[400px] text-sm font-medium leading-normal sticky top-0 bg-[#182834] z-10">Total Word Shows</th>
+                                        <th class="px-4 py-4 text-left text-white w-[400px] text-sm font-medium leading-normal sticky top-0 bg-[#182834] z-10">Total Word chars</th>
+                                        <th class="px-4 py-4 text-left text-white w-[400px] text-sm font-medium leading-normal sticky top-0 bg-[#182834] z-10">Total Word shows</th>
                                         <th class="px-4 py-4 text-left text-white w-[400px] text-sm font-medium leading-normal sticky top-0 bg-[#182834] z-10">Total Words</th>
                                         <th class="px-4 py-4 text-left text-white w-[400px] text-sm font-medium leading-normal sticky top-0 bg-[#182834] z-10">Frequency</th>
                                     </tr>
@@ -415,8 +416,9 @@
             tr.innerHTML = `
                 <td class="px-4 py-2 text-sm text-white">${row[0]}</td>
                 <td class="px-4 py-2 text-sm text-white">${row[1]}</td>
-                <td class="px-4 py-2 text-sm text-white bg-[#182834]">${row[2]}</td>
-                <td class="px-4 py-2 text-sm text-white">${row[3]}</td>
+                <td class="px-4 py-2 text-sm text-white">${row[2]}</td>
+                <td class="px-4 py-2 text-sm text-white bg-[#182834]">${row[3]}</td>
+                <td class="px-4 py-2 text-sm text-white">${row[4]}</td>
             `;
             wordsTableBody.appendChild(tr);
         });
@@ -433,7 +435,8 @@
                 <td class="px-4 py-2 text-sm text-white">${row[1]}</td>
                 <td class="px-4 py-2 text-sm text-white">${row[2]}</td>
                 <td class="px-4 py-2 text-sm text-white">${row[3]}</td>
-                <td class="px-4 py-2 text-sm text-white">${row[4]}</td>
+                <td class="px-4 py-2 text-sm text-white bg-[#182834]">${row[4]}</td>
+                <td class="px-4 py-2 text-sm text-white">${row[5]}</td>
             `;
             wordsTableBody.appendChild(tr);
         }
