@@ -84,7 +84,7 @@
     <h2 class="text-white text-[22px] font-bold leading-tight tracking-[-0.015em] mb-4">Songs</h2>
     
     <!-- כפתור Browse New Songs -->
-    <div class="flex items-center gap-4">
+    <div class="flex items-center gap-4 mb-4">
       <button
         id="browse-new-songs"
         class="bg-[#2094f3] text-white rounded-lg px-4 py-2 text-sm font-bold leading-normal hover:bg-[#1a7ec8] transition-colors duration-200"
@@ -100,6 +100,12 @@
         Reset
       </button>
     </div>
+    <input
+    id="filter-songs"
+    class="form-input w-full rounded-xl text-white border border-[#314f68] bg-[#182834] h-12 placeholder:text-[#90b0cb] px-4 text-sm mb-4"
+    value=""
+    placeholder="Type to filter songs..."
+/>
     
     <input 
           type="file" 
@@ -128,7 +134,7 @@
                 </svg>
               </div>
               <div class="flex flex-col flex-grow">
-                <p class="text-white text-base font-medium">{{ song_name }}</p>
+                <p class="song-name text-white text-base font-medium">{{ song_name }}</p>
                 <p class="text-[#90b0cb] text-sm">{{ id }}</p>
               </div>
               <div class="shrink-0">
@@ -600,5 +606,30 @@ async function processFiles() {
   function loadSongDetails(songId) {
     alert(`Song details will be loaded for song ID: ${songId}`);
   }
+
+  document.addEventListener("DOMContentLoaded", () => {
+    const filterSongsInput = document.getElementById("filter-songs");
+    // alert(filterSongsInput)
+    const songListContainer = document.getElementById("songs-container");
+    // alert(songListContainer)
+
+    const songItems = Array.from(songListContainer.querySelectorAll(".group-item"));
+
+
+    filterSongsInput.addEventListener("input", (event) => {
+        const filterText = event.target.value.toLowerCase();
+        // סינון השירים
+        songItems.forEach((songItem) => {
+          
+            const songName = songItem.querySelector(".song-name").textContent.toLowerCase();
+            if (songName.includes(filterText)) {
+                songItem.style.display = ""; // הצגת השיר
+            } else {
+                songItem.style.display = "none"; // הסתרת השיר
+            }
+        });
+    });
+  });
+
 </script>
 {% endblock %}
