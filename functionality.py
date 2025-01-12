@@ -372,6 +372,10 @@ async def fetch_words_in_groups(group_name = None):
 async def fetch_words():
     return await fetch_table_df(words_table_query)
 
+# Fetches a list of words with their IDs and the word itself and last syllable.
+async def fetch_whole_words():
+    return await fetch_table_df(whole_words_table_query)
+
 """
     Inserts a new expression into the database.
 

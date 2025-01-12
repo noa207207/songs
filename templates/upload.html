@@ -35,14 +35,18 @@
       padding: 1rem;
     }
 
-.selected-song {
-  background-color: #2a3e50;
-  border-left: 4px solid #2094f3;
-}
-  .delete-icon {
+  .selected-song {
+    background-color: #2a3e50; /* צבע הרקע לבחירה */
+    color: white; /* צבע הטקסט לבחירה */
+  }
+
+.delete-icon {
   background-color: transparent;
   border-radius: 50%;
   padding: 5px;
+}
+.group-item.selected {
+  background-color: #2a3e50; /* רקע כשנבחרה קבוצה */
 }
 
 .delete-icon:hover {
@@ -135,7 +139,6 @@
               </div>
               <div class="flex flex-col flex-grow">
                 <p class="song-name text-white text-base font-medium">{{ song_name }}</p>
-                <p class="text-[#90b0cb] text-sm">{{ id }}</p>
               </div>
               <div class="shrink-0">
                 <div class="text-white flex size-7 items-center justify-center delete-icon transition-all duration-200" 
@@ -191,7 +194,7 @@
           class="form-input w-full rounded-lg bg-[#2094f3] text-white h-10 px-3 placeholder:text-[#90b0cb] hover:bg-[#1a7ec8] transition-colors duration-200"
           onclick="saveDetails()"
         >
-          Save
+          Add
         </button>
       
         <!-- כפתור Search -->
@@ -237,17 +240,7 @@
         ></textarea>
       </div>
     </div>
-    
-    
-    
-    
-    
   </div>
-
-  
-  
-  
-  
 </div>
 
 <script id="details-data" type="application/json">
@@ -287,22 +280,25 @@ function handleSongSelection(songName) {
 
     selectedSongName = songName;
 
-    // הסרת מחלקת הבחירה מכל השורות
-    document.querySelectorAll(".selected-song").forEach((el) => el.classList.remove("selected-song"));
+    // הסרת מחלקת הבחירה מכל השירים
+    document.querySelectorAll(".group-item").forEach((el) => el.classList.remove("selected-song"));
 
-    // מציאת השורה שנבחרה והוספת מחלקת הבחירה
-    const selectedElement = document.querySelector(`[onclick="handleSongSelection('${songName}')"]`);
+    // מציאת השיר שנבחר והוספת מחלקת הבחירה
+    const selectedElement = [...document.querySelectorAll(".group-item")]
+      .find(el => el.getAttribute("data-song-name") === songName);
+
     if (selectedElement) {
       selectedElement.classList.add("selected-song");
     }
 
-    renderDetailsTable(songName); // קריאה לפונקציה עם שם השיר
+    // קריאה לפונקציות נוספות כמו רינדור טבלה
+    renderDetailsTable(songName); 
+    loadSongContent(songName);
   } else {
     console.error("No song name found!");
   }
-
-  loadSongContent(songName)
 }
+
 
 
 async function saveDetails() {

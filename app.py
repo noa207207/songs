@@ -12,37 +12,32 @@ import shutil
 UPLOAD_FOLDER = "static/songs"
 app = Quart(__name__)
 
-###############################################################################
-# 1) מגדירים Event Loop ות'רד נפרדים שירוצו ברקע, ושם ייווצר המנוע (engine)
-###############################################################################
-
-# זה ה-Loop "ברקע" שעליו ירוצו כל פעולות ה-DB:
 bg_loop = asyncio.new_event_loop()
 
+"""
+    Function running in a separate thread to manage its own asyncio event loop.
+"""
 def bg_loop_runner():
-    """פונקציה שרצה בת'רד נפרד ומנהלת לולאה משלה."""
     asyncio.set_event_loop(bg_loop)
     bg_loop.run_forever()
 
-# הפעלת הת'רד הנפרד:
 bg_thread = threading.Thread(target=bg_loop_runner, daemon=True)
 bg_thread.start()
 
+"""
+    Allows invoking a coroutine on the background event loop (bg_loop).
+    - Executes `coro(*args, **kwargs)` on bg_loop.
+    - Uses `asyncio.run_coroutine_threadsafe` to send the task to the other loop.
+    - Returns the result as an awaitable future.
+"""
 async def call_in_background(coro, *args, **kwargs):
-    """
-    פונקציה שתאפשר לנו לקרוא לקורוטינה (async) על הלולאה bg_loop.
-    - מפעילים את coro(*args, **kwargs) ברקע,
-    - עוטפים ב- run_coroutine_threadsafe כי אנחנו שולחים משימה ללולאה אחרת,
-    - מחזירים תוצאה ב-await.
-    """
     future = asyncio.run_coroutine_threadsafe(coro(*args, **kwargs), bg_loop)
     return await asyncio.wrap_future(future)
 
-###############################################################################
-# 2) כל מקום שבו היתה קריאה לפונקציה 'async' חיצונית (DB וכו'),
-#    נעטוף בקריאה ל-call_in_background(...).
-###############################################################################
-
+"""
+    Deletes a specific expression from the database.
+    :param expression_str: The expression to delete.
+"""
 @app.route('/delete-expression/<string:expression_str>', methods=['DELETE'])
 async def delete_expression_route(expression_str):
     try:
@@ -56,7 +51,10 @@ async def delete_expression_route(expression_str):
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
-
+"""
+    Deletes a song file from the server and its entry from the database.
+    :param song_name: Name of the song to delete.
+"""
 @app.route("/delete-song/<song_name>", methods=["DELETE"])
 async def delete_song_route(song_name):
     try:
@@ -72,6 +70,10 @@ async def delete_song_route(song_name):
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
+"""
+    Adds a new expression to the database.
+    Expects a JSON payload with the key "expression".
+"""
 @app.route('/insert-expression', methods=['POST'])
 async def insert_expression_route():
     try:
@@ -86,7 +88,10 @@ async def insert_expression_route():
         print(f"Error inserting expression: {e}")
         return jsonify({"error": "Failed to insert expression"}), 500
 
-
+"""
+    Deletes a specific detail line from a song's metadata in the database.
+    :param details_line_id: The ID of the detail line to delete.
+"""
 @app.route("/delete-song-details/<int:details_line_id>", methods=["DELETE"])
 async def delete_song_details(details_line_id):
     try:
@@ -95,7 +100,10 @@ async def delete_song_details(details_line_id):
     except Exception as e:
         return jsonify({"message": str(e)}), 500
 
-
+"""
+    Deletes a group by name from the database.
+    :param group_name: Name of the group to delete.
+"""
 @app.route('/delete-group/<group_name>', methods=['DELETE'])
 async def delete_group_route(group_name):
     try:
@@ -115,8 +123,10 @@ async def delete_group_route(group_name):
         print(f"Error in delete route: {e}")
         return jsonify({"status": "error", "message": "An unexpected error occurred."}), 500
 
+"""
+    Clears all data from the database and deletes all files in the `static/songs` directory.
+"""
 @app.route("/clear-db", methods=["DELETE"])
-
 async def clear_db_route():
     try:
         # קריאה לפונקציה לניקוי ה-DB
@@ -139,14 +149,14 @@ async def clear_db_route():
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
-    
+"""
+    Retrieves data on how a given phrase appears in the specified folder.
+    Query parameters:
+      - `phrase`: The phrase to analyze.
+      - `folder`: The folder containing files for analysis.
+"""
 @app.route('/get-expression-shows', methods=['GET'])
 def get_expression_shows_route():
-    """
-    שים לב: כאן לא מוגדר כ-async.
-    אם get_expression_shows הוא לא פונקציה DB-heavy, אפשר להשאיר ככה.
-    במידה והוא פונה ל-DB, צריך לשנות לasync + לקרוא call_in_background.
-    """
     try:
         phrase = request.args.get('phrase', '')
         folder_path = request.args.get('folder', '')
@@ -162,6 +172,11 @@ def get_expression_shows_route():
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
+"""
+    Fetches rhyming words for a given input word from the database.
+    Query parameter:
+      - `word`: The word to find rhymes for.
+"""
 @app.route("/get-rhymes")
 async def get_rhymes():
     
@@ -176,7 +191,9 @@ async def get_rhymes():
     except Exception as e:
         return jsonify({"status": "error", "message": str(e)}), 500
 
-
+"""
+    Renders the expressions page, displaying available expressions and related data.
+"""
 @app.route("/expressions")
 async def expressions_page():
     songs = await call_in_background(fetch_songs)
@@ -184,15 +201,18 @@ async def expressions_page():
     exp = await call_in_background(fetch_expressions)
     return await render_template("expressions.html", exp=exp, songs=songs, words=words, active_page='expressions')
 
-
+"""
+    Renders the rhymes page, displaying words and their rhyming counterparts.
+"""
 @app.route("/rhymes")
 async def rhymes_page():
     songs = await call_in_background(fetch_songs)
     words = await call_in_background(fetch_words)
     return await render_template("rhymes.html", songs=songs, words=words, active_page='rhymes')
 
-
-
+"""
+    Renders the statistics page, displaying various metrics about songs and words.
+"""
 @app.route("/stat")
 async def stat_page():
     words_stat_in_songs = await call_in_background(words_statistics_in_song_df)
@@ -214,7 +234,9 @@ async def stat_page():
         active_page='stat'
     )
 
-
+"""
+    Renders the search page, allowing users to search for words and phrases.
+"""
 @app.route("/search")
 async def search_page():
     songs = await call_in_background(fetch_songs)
@@ -224,7 +246,9 @@ async def search_page():
 
     return await render_template("search.html", songs=songs, words=words, pars=pars, active_page='search')
 
-
+"""
+    Renders the indexing page, showing word indices, groups, and relationships.
+"""
 @app.route("/indexing")
 async def indexing_page():
     index = await call_in_background(words_index_df)
@@ -240,6 +264,10 @@ async def indexing_page():
         words_in_group=words_in_group,
         active_page='indexing'
     )
+
+"""
+    Renders the group management page, showing existing groups and associated words.
+"""
 @app.route("/group")
 async def group_page():
     groups = await call_in_background(fetch_groups)
@@ -248,6 +276,10 @@ async def group_page():
 
     return await render_template("group.html", groups=groups, words=words, words_in_group=words_in_group, active_page='group')
 
+"""
+    Adds a new group to the database.
+    Expects a JSON payload with keys `group_name` and optionally `group_purpose`.
+"""
 @app.route('/add_group', methods=['POST'])
 async def add_group():
     data = await request.get_json()
@@ -273,6 +305,9 @@ async def add_group():
         }
     })
 
+"""
+    Retrieves all words associated with a group.
+"""
 @app.route("/get-words-in-group", methods=["GET"])
 async def get_words__group():
     try:
@@ -282,7 +317,10 @@ async def get_words__group():
     except Exception as e:
         return jsonify({"status": "error", "message": str(e)})
     
-
+"""
+    Adds a word to a specific group in the database.
+    Expects a JSON payload with `group_name` and `word_str`.
+"""
 @app.route("/add-word-to-group", methods=["POST"])
 async def add_word_to_group():
     try:
@@ -298,7 +336,10 @@ async def add_word_to_group():
         print(f"Error adding word to group: {e}")
         return jsonify({"status": "error", "message": str(e)})
 
-
+"""
+    Removes a word from a specific group in the database.
+    Expects a JSON payload with `group_name` and `word_str`.
+"""
 @app.route("/remove-word-from-group", methods=["POST"])
 async def remove_word_from_group():
     data = await request.json
@@ -309,13 +350,18 @@ async def remove_word_from_group():
     await call_in_background(delete_word_from_group, group_name, word_str)
     return jsonify({"status": "success"})
 
+"""
+    Renders the main upload page, showing available songs and their details.
+"""
 @app.route("/")
 async def upload_page():
     songs = await call_in_background(fetch_songs)
     details = await call_in_background(get_search_details_df)
     return await render_template("upload.html", songs=songs, details=details, active_page='songs')
 
-
+"""
+    Retrieves the list of available songs from the database.
+"""
 @app.route("/songs-list", methods=["GET"])
 async def get_songs_list():
     try:
@@ -324,7 +370,10 @@ async def get_songs_list():
     except Exception as e:
         return jsonify({"error": str(e)}), 500
     
-
+"""
+    Handles file uploads for new songs.
+    Saves files to the `static/songs` directory and processes them into the database.
+"""
 @app.route("/upload", methods=["POST"])
 async def upload_files():
     try:
@@ -339,7 +388,6 @@ async def upload_files():
             file_path = os.path.join(UPLOAD_FOLDER, file.filename)
             await file.save(file_path)
             file_list.append(file_path)
-            print(f"Saved: {file.filename}")
 
         start_time = time.time()
         await call_in_background(load_songs_from_files_list, file_list)
@@ -350,6 +398,16 @@ async def upload_files():
         print(f"Error: {e}")
         return jsonify({"error": str(e)}), 500
 
+"""
+    Saves the details of a song into the database.
+    Expects a JSON payload with the following keys:
+      - `song_name`: Name of the song.
+      - `poet`: Name of the poet (optional).
+      - `composer`: Name of the composer (optional).
+      - `creation_year`: Year of creation (optional).
+      - `video_link`: A link to the song's video (optional).
+      - `performer_name`: Name of the performer (optional).
+"""
 @app.route("/save-song-details", methods=["POST"])
 async def save_song_details_route():
     try:

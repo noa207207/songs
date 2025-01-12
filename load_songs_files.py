@@ -30,8 +30,8 @@ IS_LAST_IN_LINE_TRUE = 1
 async def insert_to_words_in_songs(unclean_word, clean_word , song_id, paragraphs_num,  line_num_in_par, word_num_in_line, word_index_in_song):
     insert_words_in_songs_query = """ 
         INSERT INTO words_in_songs 
-            (unclean_word,  clean_word,  song_id,  par_num,  line_num_in_par,  word_num_in_line,  is_last_in_line,  word_num,  chars_count,  last_syllable) VALUES  
-            (:unclean_word, :clean_word, :song_id, :par_num, :line_num_in_par, :word_num_in_line, :is_last_in_line, :word_num, :chars_count, :last_syllable)
+            (unclean_word,  clean_word,  song_id,  par_num,  line_num_in_par,  word_num_in_line,  is_last_in_line,  word_num,  chars_count) VALUES  
+            (:unclean_word, :clean_word, :song_id, :par_num, :line_num_in_par, :word_num_in_line, :is_last_in_line, :word_num, :chars_count)
         """
     params = {
         'clean_word': clean_word,
@@ -42,8 +42,7 @@ async def insert_to_words_in_songs(unclean_word, clean_word , song_id, paragraph
         'word_num_in_line': word_num_in_line,
         'is_last_in_line': IS_LAST_IN_LINE_TRUE if unclean_word.endswith("\n") else IS_LAST_IN_LINE_FALSE,
         'word_num': word_index_in_song,
-        'chars_count': len(clean_word),
-        'last_syllable': get_last_syllable(clean_word)
+        'chars_count': len(clean_word)
         }
     await get_query_from_db(insert_words_in_songs_query, None, params=params)
 
@@ -58,6 +57,22 @@ async def insert_to_words_in_songs(unclean_word, clean_word , song_id, paragraph
 """
 async def update_words():
     await get_query_from_db(update_words_query, None)
+    words_df = await get_query_from_db(whole_words_table_query, None)
+
+    words_df['last_syllable'] = words_df['word_str'].apply(get_last_syllable)
+    await get_query_from_db("DELETE FROM words", None)
+
+    batch_size = 500
+    start = 0
+    while start < len(words_df):
+        batch = words_df.iloc[start:start + batch_size]
+        params = [
+            {'word_str': row.word_str, 'last_syllable': row.last_syllable}
+            for row in batch.itertuples(index=False)
+        ]
+        await get_query_from_db(insert_to_words_query, None, params=params)
+        start += batch_size
+
 
 """
     Inserts words from a paragraph into the words_in_songs table in bulk.
@@ -80,14 +95,14 @@ async def insert_par_words(song_id, paragraphs_num, par_words_list, start_par_in
     word_index_in_song = start_par_index
     insert_to_words_in_songs_query = """
         INSERT INTO words_in_songs 
-        (unclean_word, clean_word, song_id, par_num, line_num_in_par, word_num_in_line, is_last_in_line, word_num, chars_count, last_syllable) 
+        (unclean_word, clean_word, song_id, par_num, line_num_in_par, word_num_in_line, is_last_in_line, word_num, chars_count) 
         VALUES 
     """
     values = []
     words_variables_values = {}
     for idx, word in enumerate(par_words_list):
         clean_word = re.sub(r'^[\W_]+|[\W_]+$', '', word).lower()
-        cur_word_variables = f"(:unclean_word_{idx}, :clean_word_{idx}, :song_id_{idx}, :par_num_{idx}, :line_num_in_par_{idx}, :word_num_in_line_{idx}, :is_last_in_line_{idx}, :word_num_{idx}, :chars_count_{idx}, :last_syllable_{idx})"
+        cur_word_variables = f"(:unclean_word_{idx}, :clean_word_{idx}, :song_id_{idx}, :par_num_{idx}, :line_num_in_par_{idx}, :word_num_in_line_{idx}, :is_last_in_line_{idx}, :word_num_{idx}, :chars_count_{idx})"
         values.append(cur_word_variables)
         words_variables_values.update({
             f"unclean_word_{idx}": word,
@@ -98,8 +113,7 @@ async def insert_par_words(song_id, paragraphs_num, par_words_list, start_par_in
             f"word_num_in_line_{idx}": curr_word_num_in_line,
             f"is_last_in_line_{idx}": 1 if word.endswith("\n") else 0,
             f"word_num_{idx}": word_index_in_song,
-            f"chars_count_{idx}": len(clean_word),
-            f"last_syllable_{idx}": get_last_syllable(clean_word),
+            f"chars_count_{idx}": len(clean_word)
         })
         word_index_in_song += 1
         curr_word_num_in_line += 1
@@ -124,15 +138,13 @@ async def insert_par_words(song_id, paragraphs_num, par_words_list, start_par_in
 """
 async def insert_new_par(song_id, paragraphs_num, start_index, end_index):
     insert_par_query = """
-        INSERT INTO paragraphs (song_id, par_num, first_word_index, last_word_index)
+        INSERT INTO paragraphs (song_id, par_num)
         OUTPUT INSERTED.id
-        VALUES (:song_id, :paragraph_num, :first_word_index, :last_word_index)
+        VALUES (:song_id, :paragraph_num)
         """
     params = {
         'song_id': song_id,
-        'paragraph_num': paragraphs_num,
-        'first_word_index': start_index,
-        'last_word_index': end_index
+        'paragraph_num': paragraphs_num
     }
     await get_query_from_db(insert_par_query, None, params=params)
 
@@ -226,7 +238,10 @@ async def load_songs_from_files_list(files_path_list):
         await asyncio.gather(*tasks)
         await update_words()
         await get_query_from_db(update_word_id_query, None) # Updates the word_id field in the words_in_songs table.
+    start_time = time.time()
     await load_songs()
+    end_time = time.time()
+    print(f"total is: {end_time - start_time} seconds")
     return True
 
 """

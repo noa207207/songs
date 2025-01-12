@@ -42,6 +42,7 @@
   padding: 5px;
 }
 
+
 .delete-icon:hover {
   background-color: #ff4d4d; /* אדום בהיר */
   cursor: pointer;
@@ -60,6 +61,10 @@
   animation: spin 1s linear infinite;
 }
 
+.selected-expression {
+  background-color: #2a3e50; /* צבע רקע לבחירה */
+  color: white; /* צבע טקסט */
+}
 
 @keyframes spin {
   0% {
@@ -239,11 +244,19 @@ async function loadSongContent(expressionStr) {
             `;
             tableBody.appendChild(tr);
         });
+
+        // הוספת מחלקת הבחירה לביטוי הנבחר
+        document.querySelectorAll(".group-item").forEach((el) => el.classList.remove("selected-expression"));
+        const selectedElement = document.querySelector(`[data-group-name="${expressionStr}"]`);
+        if (selectedElement) {
+            selectedElement.classList.add("selected-expression");
+        }
     } catch (error) {
         console.error("Error loading song content:", error);
         alert("Failed to load song content.");
     }
 }
+
 
 // פונקציה שתטפל בבחירת שורה
 async function handleRowSelection(event) {
