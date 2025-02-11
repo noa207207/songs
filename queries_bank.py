@@ -223,6 +223,69 @@ update_words_query = """
         );
 """
 
+# The following two queries implement the reconstruction of the full song from the database and the search for
+# linguistic expressions within the database.  
+# As we explained in the presentation, we chose to implement this by storing the files, 
+# but these queries are written and fully functional.
+
+show_full_song = """
+    SELECT
+    song_id,
+    song_name, 
+    STRING_AGG(unclean_word , '') AS SONG_LYRICS
+FROM words_in_songs
+JOIN songs ON songs.id = words_in_songs.song_id
+WHERE (:song_id IS NULL OR song_id = :song_id)
+GROUP BY song_id, song_name
+"""
+
+show_expressuin_contextes = """
+    WITH search_phrase AS (
+    SELECT 'me and you' AS text
+),
+phrase_words AS (
+    SELECT value AS word, 
+           ROW_NUMBER() OVER (ORDER BY (SELECT NULL)) AS position
+    FROM STRING_SPLIT((SELECT text FROM search_phrase), ' ')
+),
+word_matches AS (
+    SELECT wis.song_id, wis.par_num, wis.line_num_in_par, wis.word_num_in_line, wis.word_num, wis.clean_word, 
+           ROW_NUMBER() OVER (PARTITION BY wis.song_id, wis.par_num, wis.line_num_in_par ORDER BY wis.word_num_in_line) AS seq_num
+    FROM words_in_songs wis
+    JOIN phrase_words pw ON wis.clean_word = pw.word
+),
+full_sequences AS (
+    SELECT wm1.song_id, wm1.par_num, wm1.line_num_in_par, wm1.word_num_in_line AS start_word,
+           wm1.seq_num AS start_seq,
+           wm_last.seq_num AS end_seq
+    FROM word_matches wm1
+    JOIN word_matches wm_last 
+      ON wm1.song_id = wm_last.song_id
+      AND wm1.par_num = wm_last.par_num
+      AND wm1.line_num_in_par = wm_last.line_num_in_par
+      AND wm_last.seq_num = wm1.seq_num + (SELECT COUNT(*) - 1 FROM phrase_words)  -- מוודאים שהמילה האחרונה מופיעה ברצף
+),
+valid_sequences AS (
+    SELECT fs.song_id, fs.par_num, fs.line_num_in_par, fs.start_word
+    FROM full_sequences fs
+    WHERE NOT EXISTS (
+        SELECT 1 FROM phrase_words pw
+        WHERE NOT EXISTS (
+            SELECT 1 FROM word_matches wm
+            WHERE wm.song_id = fs.song_id 
+              AND wm.par_num = fs.par_num
+              AND wm.line_num_in_par = fs.line_num_in_par
+              AND wm.seq_num BETWEEN fs.start_seq AND fs.end_seq
+              AND wm.clean_word = pw.word
+        )
+    )
+)
+SELECT DISTINCT s.song_name, vs.par_num, vs.line_num_in_par, vs.start_word AS word_num_in_line
+FROM valid_sequences vs
+JOIN songs s ON vs.song_id = s.id
+ORDER BY s.song_name, vs.par_num, vs.line_num_in_par, vs.start_word;
+"""
+
 is_exist_song_query = "SELECT COUNT(1) FROM songs WHERE song_name = :song_name"
 
 expression_table_query = "SELECT * FROM expression"
